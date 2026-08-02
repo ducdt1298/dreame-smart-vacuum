@@ -4,6 +4,12 @@ from typing import Final
 DOMAIN = "dreame_vacuum"
 LOGGER = logging.getLogger(__package__)
 
+# Lovelace card shipped inside the integration. Registering it via
+# add_extra_js_url means the user never has to add a dashboard resource.
+CARD_FILENAME: Final = "dreame-vacuum-card.js"
+CARD_URL_PATH: Final = f"/{DOMAIN}/{CARD_FILENAME}"
+DATA_CARD_REGISTERED: Final = "card_registered"
+
 UNIT_MINUTES: Final = "min"
 UNIT_HOURS: Final = "h"
 UNIT_PERCENT: Final = "%"

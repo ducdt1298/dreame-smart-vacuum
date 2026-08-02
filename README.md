@@ -19,6 +19,7 @@ Complete app replacement with Home Assistant for Dreame robot vacuums.
 ## Features
 
 - [Supported devices](https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/supported_devices.md)
+- [**Dreame Vacuum Card**: Dreame app style card with tap-to-select room cleaning](https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/card.md)
 - [Auto generated device entities](https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/entities.md)
 - [Live and multi floor map support](https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/map.md)
 - [Map obstacle photos](https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/map.md#obstacle-photos)
@@ -65,6 +66,22 @@ wget -O - https://raw.githubusercontent.com/Tasshack/dreame-vacuum/dev/install |
 - Navigate to device page for disabling or enabling entities that you want to use.
 
     <a href="https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/entities.md" target="_blank">About entities</a>
+
+
+## The Card
+
+A Lovelace card built for the daily flow — battery and status only in the header, then pick
+where to clean and press start. Room selection happens directly on the map, multi-select,
+and the room you tap first is cleaned first, exactly like the Dreame app.
+
+```yaml
+type: custom:dreame-vacuum-card
+entity: vacuum.your_vacuum
+```
+
+The card is served by the integration itself, so there is no dashboard resource to add.
+
+**[Full card documentation](https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/card.md)**
 
 
 ## How To Use

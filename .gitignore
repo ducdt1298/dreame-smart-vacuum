@@ -1,4 +1,6 @@
 .vs
+__pycache__/
+*.py[cod]
 *.pyproj
 *.pyproj.user
 *.sln
