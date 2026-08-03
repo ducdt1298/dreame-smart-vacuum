@@ -53,9 +53,7 @@ Three tabs, matching the app:
 - **Phòng / Rooms** — tap rooms directly on the map, or use the room chips below it. Tap
   again to deselect.
 - **Tất cả / All** — the whole map.
-- **Khu vực / Zones** — drag on the map to draw a rectangle. Tap a drawn zone to remove it.
-  Zones smaller than the robot's minimum (just over two map grid cells per side) are
-  rejected as you draw, so the robot never bounces one back.
+- **Khu vực / Zones** — drag on the map to draw a rectangle, then edit it. See below.
 
 The Rooms tab hides itself when the map has no saved rooms (during fast-mapping, or before
 the first map is saved), and both map-driven tabs hide when there is no usable map at all —
@@ -84,6 +82,43 @@ configured sequence.
 
 Step 1 is rejected by the robot while it is running — if it fails you get a toast and the
 rooms are still cleaned, just in the robot's own order.
+
+### Editing a zone
+
+Drawing a zone is a drag on empty map. After that the zone is a thing you can adjust rather
+than a thing you can only re-draw:
+
+| Gesture | Result |
+|---|---|
+| Drag on empty map | Draw a new zone, which becomes the selected one |
+| Tap a zone | Select it — corner grips and a delete badge appear |
+| Drag inside the selected zone | Move it, size preserved |
+| Drag a corner grip | Resize from that corner; the opposite corner stays anchored |
+| Tap the red **×** badge | Delete that zone |
+| Tap empty map | Deselect |
+| `Delete` / `Backspace` | Delete the selected zone |
+| `Escape` | Deselect |
+| **Xoá tất cả / Clear all** under the map | Remove every zone |
+
+**Tapping a zone used to delete it.** That was the only way to remove one, it was invisible
+unless you already knew, and a stray tap anywhere inside a zone destroyed it. Deletion is now
+explicit, and the hint line under the map changes with the state — nothing drawn, something
+drawn but nothing selected, one selected — because a gesture nobody can see is a gesture
+nobody uses.
+
+Constraints the editor keeps for you:
+
+- A zone can never be dragged off the map. Movement clamps against the map's own extent,
+  derived from the calibration of the image corners.
+- A zone can never be resized below the robot's minimum — just over two map grid cells per
+  side, since `device.py` computes `w = side / (grid_size * 2)` and rejects `w <= 1.0`.
+  Resizing clamps at that floor rather than rejecting the drag, which would make the zone
+  snap back mid-gesture. Drawing still rejects a too-small drag outright.
+- Grips and the delete badge are sized in client pixels and drawn in image pixels, so they
+  stay finger-sized on a large map painted small.
+- The badge normally floats above the top-right corner; for a zone against the top or right
+  edge it tucks inside, because the overlay clips to the image and half a delete button is
+  worse than none.
 
 ### Room outlines are pixel-exact
 

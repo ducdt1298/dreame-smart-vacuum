@@ -218,6 +218,9 @@ const FALLBACK = {
     repeats: "Repeats",
     select_rooms: "Select rooms on the map",
     draw_zone: "Drag on the map to draw a zone",
+    zone_pick: "Tap a zone to move, resize or delete it",
+    zone_edit: "Drag to move, drag a corner to resize, × to delete",
+    zone_clear: "Clear all",
     no_map: "Map not available yet",
     no_rooms: "No saved rooms on this map",
     room_settings: "Room settings",
@@ -267,6 +270,9 @@ const FALLBACK = {
     repeats: "Lặp lại",
     select_rooms: "Chọn phòng trên bản đồ",
     draw_zone: "Kéo trên bản đồ để vẽ khu vực",
+    zone_pick: "Bấm vào một vùng để di chuyển, thay đổi hoặc xoá",
+    zone_edit: "Kéo để di chuyển, kéo góc để thay đổi, × để xoá",
+    zone_clear: "Xoá tất cả",
     no_map: "Bản đồ chưa sẵn sàng",
     no_rooms: "Bản đồ này chưa có phòng nào được lưu",
     room_settings: "Cài đặt phòng",
@@ -591,6 +597,7 @@ class DreameSmartVacuumCard extends HTMLElement {
     this._mode = "rooms"; // "rooms" | "all" | "zones"
     this._selection = []; // ordered segment ids - tap order == clean order
     this._zones = []; // [[x0,y0,x1,y1], ...] vacuum mm
+    this._zoneSel = null; // index into _zones, or null
     this._settings = null; // lazily seeded from the live entities
     this._geo = new RoomGeometry();
     this._calib = null;
@@ -975,7 +982,10 @@ class DreameSmartVacuumCard extends HTMLElement {
 
         <div class="roomlist" role="group"></div>
 
-        <div class="hint"></div>
+        <div class="hintrow">
+          <div class="hint"></div>
+          <button class="linkbtn zone-clear gone" type="button"></button>
+        </div>
 
         <button class="chip custom-chip" aria-haspopup="dialog">
           ${svg(ICON.autorenew, "chip-ico")}
@@ -1024,6 +1034,8 @@ class DreameSmartVacuumCard extends HTMLElement {
       mapSwitch: $(".map-switch"),
       roomList: $(".roomlist"),
       hint: $(".hint"),
+      hintRow: $(".hintrow"),
+      zoneClear: $(".zone-clear"),
       chip: $(".custom-chip"),
       chipTxt: $(".chip-txt"),
       tabs: Array.from(this.shadowRoot.querySelectorAll(".tab")),
@@ -1059,11 +1071,29 @@ class DreameSmartVacuumCard extends HTMLElement {
     });
     this._el.img.addEventListener("error", () => this._renderOverlay());
 
+    this._el.zoneClear.addEventListener("click", () => {
+      this._clearZones();
+      this._afterZoneChange();
+    });
+
     /* Escape closes the sheet, matching every other HA dialog. */
     this.shadowRoot.addEventListener("keydown", (ev) => {
       if (ev.key === "Escape" && this._sheet) {
         ev.stopPropagation();
         this._closeSheet();
+        return;
+      }
+      if (this._sheet || this._mode !== "zones" || this._zoneSel == null) return;
+      /* The map is a pointer surface with no focusable zones, so these are the
+         only keyboard route to editing one. */
+      if (ev.key === "Delete" || ev.key === "Backspace") {
+        ev.preventDefault();
+        this._removeZone(this._zoneSel);
+        this._afterZoneChange();
+      } else if (ev.key === "Escape") {
+        ev.preventDefault();
+        this._zoneSel = null;
+        this._afterZoneChange();
       }
     });
 
@@ -1346,12 +1376,48 @@ class DreameSmartVacuumCard extends HTMLElement {
         const y = Math.min(a.y, b.y);
         const w = Math.abs(b.x - a.x);
         const h = Math.abs(b.y - a.y);
+        const on = i === this._zoneSel;
         parts.push(
-          `<rect class="zone" data-zone="${i}" x="${x.toFixed(1)}" y="${y.toFixed(
+          `<rect class="zone${on ? " sel" : ""}" data-zone="${i}" x="${x.toFixed(
             1
-          )}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="4"/>`
+          )}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(
+            1
+          )}" rx="4"/>`
         );
       });
+
+      /* Chrome for the selected zone: corner grips to resize, and a delete badge
+         above its top-right corner. Drawn after every zone so it is never painted
+         under an overlapping one. */
+      if (this._zoneSel != null) {
+        const c = this._zoneChrome(this._zoneSel);
+        if (c) {
+          for (const k of ["nw", "ne", "se", "sw"]) {
+            const p = c.corners[k];
+            parts.push(
+              `<circle class="zgrip" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(
+                1
+              )}" r="${c.handle.toFixed(1)}"/>`
+            );
+          }
+          const bx = c.badge.x;
+          const by = c.badge.y;
+          const r = c.badge.r;
+          const arm = r * 0.42;
+          parts.push(
+            `<g class="zdel"><circle cx="${bx.toFixed(1)}" cy="${by.toFixed(
+              1
+            )}" r="${r.toFixed(1)}"/>` +
+              `<path d="M${(bx - arm).toFixed(1)},${(by - arm).toFixed(1)} L${(
+                bx + arm
+              ).toFixed(1)},${(by + arm).toFixed(1)} M${(bx + arm).toFixed(
+                1
+              )},${(by - arm).toFixed(1)} L${(bx - arm).toFixed(1)},${(
+                by + arm
+              ).toFixed(1)}"/></g>`
+          );
+        }
+      }
       if (this._drag && this._drag.rect) {
         const r = this._drag.rect;
         parts.push(
@@ -1707,11 +1773,27 @@ class DreameSmartVacuumCard extends HTMLElement {
     if (this._mode === "rooms") {
       if (!this._hasRooms()) msg = this._t("no_rooms");
       else if (!this._selection.length) msg = this._t("select_rooms");
-    } else if (this._mode === "zones" && !this._zones.length) {
-      msg = this._t("draw_zone");
+    } else if (this._mode === "zones") {
+      /* Three states worth distinguishing: nothing drawn, something drawn but
+         nothing picked, and one picked - the last is where move/resize/delete are
+         available, and saying so is the only discovery route for a gesture. */
+      if (!this._zones.length) msg = this._t("draw_zone");
+      else if (this._zoneSel == null) msg = this._t("zone_pick");
+      else msg = this._t("zone_edit");
     }
     this._setText(this._el.hint, msg);
     this._el.hint.classList.toggle("gone", !msg);
+
+    const showClear = this._mode === "zones" && this._zones.length > 0;
+    this._el.zoneClear.classList.toggle("gone", !showClear);
+    if (showClear) {
+      this._setText(
+        this._el.zoneClear,
+        this._zones.length > 1
+          ? `${this._t("zone_clear")} (${this._zones.length})`
+          : this._t("zone_clear")
+      );
+    }
   }
 
   /* ------------------------------------------------------------------ *
@@ -1721,7 +1803,7 @@ class DreameSmartVacuumCard extends HTMLElement {
   _setMode(mode) {
     if (this._mode === mode) return;
     this._mode = mode;
-    if (mode !== "zones") this._zones = [];
+    if (mode !== "zones") this._clearZones();
     if (mode !== "rooms") this._selection = [];
     this._update();
   }
@@ -1744,8 +1826,35 @@ class DreameSmartVacuumCard extends HTMLElement {
 
       if (this._mode === "zones") {
         stage.setPointerCapture(ev.pointerId);
-        this._drag = { start: pt, rect: null };
         ev.preventDefault();
+
+        /* Chrome of the selected zone first: a corner handle overlaps the zone
+           body, and the delete badge overlaps whatever is behind it. */
+        const chrome = this._zoneChromeAt(pt);
+        if (chrome === "delete") {
+          this._removeZone(this._zoneSel);
+          this._drag = null;
+          downPt = null;
+          this._afterZoneChange();
+          return;
+        }
+        if (chrome) {
+          this._drag = { kind: "resize", corner: chrome, index: this._zoneSel };
+          return;
+        }
+
+        const hit = this._zoneAt(pt);
+        if (hit != null) {
+          /* Select on press so the handles appear under the finger already
+             holding the zone; whether this ends up a tap or a move is decided at
+             pointerup. */
+          this._zoneSel = hit;
+          this._drag = { kind: "move", index: hit, last: pt };
+          this._afterZoneChange();
+          return;
+        }
+
+        this._drag = { kind: "draw", start: pt, rect: null };
         return;
       }
 
@@ -1774,7 +1883,8 @@ class DreameSmartVacuumCard extends HTMLElement {
         }
       }
 
-      if (this._drag) {
+      if (!this._drag) return;
+      if (this._drag.kind === "draw") {
         this._drag.rect = {
           x: Math.min(this._drag.start.x, pt.x),
           y: Math.min(this._drag.start.y, pt.y),
@@ -1782,6 +1892,23 @@ class DreameSmartVacuumCard extends HTMLElement {
           h: Math.abs(pt.y - this._drag.start.y),
         };
         this._renderOverlay();
+      } else if (this._drag.kind === "move") {
+        /* Track the delta between frames rather than from the press point: the
+           zone is clamped at the map edge, so a from-origin delta would let the
+           pointer run away from the zone and the zone would then lag behind it. */
+        const a = this._calib && this._calib.toVacuum(this._drag.last.x, this._drag.last.y);
+        const b = this._calib && this._calib.toVacuum(pt.x, pt.y);
+        if (a && b) {
+          this._moveZone(this._drag.index, b.x - a.x, b.y - a.y);
+          this._drag.last = pt;
+          this._renderOverlay();
+        }
+      } else if (this._drag.kind === "resize") {
+        const v = this._calib && this._calib.toVacuum(pt.x, pt.y);
+        if (v) {
+          this._resizeZone(this._drag.index, this._drag.corner, v);
+          this._renderOverlay();
+        }
       }
     });
 
@@ -1796,17 +1923,23 @@ class DreameSmartVacuumCard extends HTMLElement {
       if (this._drag) {
         const drag = this._drag;
         this._drag = null;
-        /* Branch on whether the pointer actually travelled, not on whether a
-           draft rect exists: a stationary tap still emits pointermove events on
-           touch, which would otherwise make zones impossible to delete. */
-        if (moved && drag.rect && pt) this._commitZone(drag.start, pt);
-        else if (pt) this._removeZoneAt(pt);
-        this._renderOverlay();
-        this._renderActions(
-          this._st(this._config.entity),
-          this._vacAttrs()
-        );
-        this._renderHint();
+        if (drag.kind === "draw") {
+          /* Branch on whether the pointer actually travelled, not on whether a
+             draft rect exists: a stationary tap still emits pointermove events on
+             touch, which would otherwise never register as a tap. */
+          if (moved && drag.rect && pt) {
+            const added = this._commitZone(drag.start, pt);
+            /* Select what was just drawn, so its handles and delete button are
+               already there without a second tap. */
+            if (added != null) this._zoneSel = added;
+          } else {
+            /* Tap on bare map: drop the selection. This is the way out of a
+               selection, and the reason tapping no longer deletes - losing a zone
+               to a stray tap was too easy. */
+            this._zoneSel = null;
+          }
+        }
+        this._afterZoneChange();
         return;
       }
 
@@ -1821,6 +1954,15 @@ class DreameSmartVacuumCard extends HTMLElement {
       this._drag = null;
       this._renderOverlay();
     });
+  }
+
+  /* Everything a zone edit has to refresh: the overlay, Start's enabled state and
+     the hint row that carries the count and Clear all. */
+  _afterZoneChange() {
+    this._renderOverlay();
+    const vac = this._st(this._config.entity);
+    if (vac) this._renderActions(vac, this._vacAttrs());
+    this._renderHint();
   }
 
   /* The rendered image box in client space. The <img> is `object-fit: contain`
@@ -1935,38 +2077,210 @@ class DreameSmartVacuumCard extends HTMLElement {
     this._renderHint();
   }
 
+  /* Returns the new zone's index, or null if the drag was too small to be a
+     zone the robot would accept. */
   _commitZone(startPt, endPt) {
-    if (!this._calib || !this._calib.ok) return;
+    if (!this._calib || !this._calib.ok) return null;
     const a = this._calib.toVacuum(startPt.x, startPt.y);
     const b = this._calib.toVacuum(endPt.x, endPt.y);
-    if (!a || !b) return;
+    if (!a || !b) return null;
 
     const x0 = Math.round(Math.min(a.x, b.x));
     const y0 = Math.round(Math.min(a.y, b.y));
     const x1 = Math.round(Math.max(a.x, b.x));
     const y1 = Math.round(Math.max(a.y, b.y));
 
-    /* device.py computes w = side / (grid_size * 2) and rejects w <= 1.0, so a
-       side must be strictly MORE than two grid cells. Add a little margin so a
-       zone the card accepts is never bounced by the robot. */
-    const min = (this._geo.grid || 50) * 2.2;
-    if (x1 - x0 < min || y1 - y0 < min) return;
+    const min = this._minZoneSide();
+    if (x1 - x0 < min || y1 - y0 < min) return null;
 
     this._zones.push([x0, y0, x1, y1]);
+    return this._zones.length - 1;
   }
 
-  /* Tap an existing zone to remove it - the app has no separate delete mode. */
-  _removeZoneAt(imgPt) {
-    if (!this._calib || !this._calib.ok || !this._zones.length) return;
+  /* ---- zone editing ------------------------------------------------ *
+   *
+   * A zone is stored in vacuum millimetres, but every gesture arrives in image
+   * pixels, so each helper converts at its own edge rather than keeping a second
+   * copy of the geometry in view space that could drift.
+   * ------------------------------------------------------------------ */
+
+  /* Topmost zone containing the point, or null. Last drawn wins, matching the
+     paint order. */
+  _zoneAt(imgPt) {
+    if (!this._calib || !this._calib.ok || !this._zones.length) return null;
     const v = this._calib.toVacuum(imgPt.x, imgPt.y);
-    if (!v) return;
+    if (!v) return null;
     for (let i = this._zones.length - 1; i >= 0; i--) {
       const [x0, y0, x1, y1] = this._zones[i];
-      if (v.x >= x0 && v.x <= x1 && v.y >= y0 && v.y <= y1) {
-        this._zones.splice(i, 1);
-        return;
-      }
+      if (v.x >= x0 && v.x <= x1 && v.y >= y0 && v.y <= y1) return i;
     }
+    return null;
+  }
+
+  _removeZone(i) {
+    if (i == null || i < 0 || i >= this._zones.length) return;
+    this._zones.splice(i, 1);
+    if (this._zoneSel === i) this._zoneSel = null;
+    else if (this._zoneSel != null && this._zoneSel > i) this._zoneSel -= 1;
+  }
+
+  _clearZones() {
+    this._zones = [];
+    this._zoneSel = null;
+  }
+
+  /* Image pixels per CSS pixel. Handles and the delete badge are sized for a
+     finger, which is a client-space quantity, but they are drawn in image space -
+     on a map scaled to a third of its natural size a fixed image-space handle
+     would be a third of its intended size. */
+  _imgScale() {
+    const img = this._el && this._el.img;
+    const r = this._imageRect();
+    /* _imageRect reports {left, top, width, height} - not {x, y, w, h}. Reading
+       the wrong name here silently pinned the scale at 1, which shrank every grip
+       on a map rendered smaller than its natural size. */
+    if (!img || !r || !img.naturalWidth || !r.width) return 1;
+    return img.naturalWidth / r.width;
+  }
+
+  /* The four corners of the selected zone in image space, plus the badge centre.
+     Returned in one place so the renderer and the hit test cannot disagree. */
+  _zoneChrome(i) {
+    if (!this._calib || !this._calib.ok) return null;
+    const z = this._zones[i];
+    if (!z) return null;
+    const a = this._calib.toImage(z[0], z[1]);
+    const b = this._calib.toImage(z[2], z[3]);
+    if (!a || !b) return null;
+    const x0 = Math.min(a.x, b.x);
+    const y0 = Math.min(a.y, b.y);
+    const x1 = Math.max(a.x, b.x);
+    const y1 = Math.max(a.y, b.y);
+    const s = this._imgScale();
+    const r = 12 * s;
+
+    /* The overlay is an svg sized to the image, so anything outside it is clipped.
+       The badge normally floats just above the top-right corner, but for a zone
+       drawn against the top or right edge that would cut the only delete affordance
+       in half - so tuck it inside the zone instead. */
+    const img = this._el && this._el.img;
+    const natW = (img && img.naturalWidth) || 0;
+    let bx = x1;
+    let by = y0 - 15 * s;
+    if (by - r < 0) by = y0 + 15 * s;
+    if (natW && bx + r > natW) bx = natW - r;
+
+    return {
+      rect: { x: x0, y: y0, w: x1 - x0, h: y1 - y0 },
+      handle: 7 * s, // drawn radius
+      grab: 15 * s, // forgiving touch radius
+      corners: {
+        nw: { x: x0, y: y0 },
+        ne: { x: x1, y: y0 },
+        se: { x: x1, y: y1 },
+        sw: { x: x0, y: y1 },
+      },
+      badge: { x: bx, y: by, r },
+    };
+  }
+
+  /* Which bit of the selected zone's chrome is under the pointer: a corner name,
+     "delete", or null. Checked before the zone body so a handle sitting inside
+     the rectangle still wins. */
+  _zoneChromeAt(imgPt) {
+    if (this._zoneSel == null) return null;
+    const c = this._zoneChrome(this._zoneSel);
+    if (!c) return null;
+    const near = (p, r) => Math.hypot(imgPt.x - p.x, imgPt.y - p.y) <= r;
+    if (near(c.badge, c.badge.r * 1.3)) return "delete";
+    for (const k of ["nw", "ne", "se", "sw"]) {
+      if (near(c.corners[k], c.grab)) return k;
+    }
+    return null;
+  }
+
+  /* Vacuum-space extent of the whole map, so a moved zone cannot be pushed off
+     it. Derived from the image corners because that is the only region the
+     calibration is meaningful over. */
+  _mapBounds() {
+    const img = this._el && this._el.img;
+    if (!this._calib || !this._calib.ok || !img) return null;
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    if (!w || !h) return null;
+    const pts = [
+      this._calib.toVacuum(0, 0),
+      this._calib.toVacuum(w, 0),
+      this._calib.toVacuum(0, h),
+      this._calib.toVacuum(w, h),
+    ].filter(Boolean);
+    if (pts.length !== 4) return null;
+    const xs = pts.map((p) => p.x);
+    const ys = pts.map((p) => p.y);
+    return {
+      minX: Math.min(...xs),
+      maxX: Math.max(...xs),
+      minY: Math.min(...ys),
+      maxY: Math.max(...ys),
+    };
+  }
+
+  _minZoneSide() {
+    /* device.py computes w = side / (grid_size * 2) and rejects w <= 1.0, so a
+       side must be strictly MORE than two grid cells. The margin keeps a zone the
+       card accepts from being bounced by the robot. */
+    return (this._geo.grid || 50) * 2.2;
+  }
+
+  /* Slide a zone by a vacuum-space delta, kept whole and kept on the map. */
+  _moveZone(i, dx, dy) {
+    const z = this._zones[i];
+    if (!z) return;
+    const b = this._mapBounds();
+    let [x0, y0, x1, y1] = z;
+    const w = x1 - x0;
+    const h = y1 - y0;
+    x0 += dx;
+    y0 += dy;
+    if (b) {
+      x0 = clamp(x0, b.minX, b.maxX - w);
+      y0 = clamp(y0, b.minY, b.maxY - h);
+    }
+    this._zones[i] = [
+      Math.round(x0),
+      Math.round(y0),
+      Math.round(x0 + w),
+      Math.round(y0 + h),
+    ];
+  }
+
+  /* Drag one corner. The opposite corner is the anchor, and the moving edges are
+     clamped so the zone can never be dragged below the size the robot accepts -
+     clamping beats rejecting, which would make the zone snap back mid-gesture. */
+  _resizeZone(i, corner, vPt) {
+    const z = this._zones[i];
+    if (!z) return;
+    const b = this._mapBounds();
+    const min = this._minZoneSide();
+    let [x0, y0, x1, y1] = z;
+    let px = vPt.x;
+    let py = vPt.y;
+    if (b) {
+      px = clamp(px, b.minX, b.maxX);
+      py = clamp(py, b.minY, b.maxY);
+    }
+    const west = corner === "nw" || corner === "sw";
+    const north = corner === "nw" || corner === "ne";
+    if (west) x0 = Math.min(px, x1 - min);
+    else x1 = Math.max(px, x0 + min);
+    if (north) y0 = Math.min(py, y1 - min);
+    else y1 = Math.max(py, y0 + min);
+    this._zones[i] = [
+      Math.round(x0),
+      Math.round(y0),
+      Math.round(x1),
+      Math.round(y1),
+    ];
   }
 
   _cycleMap() {
@@ -2762,7 +3076,7 @@ class DreameSmartVacuumCard extends HTMLElement {
     try {
       await this._startJob(attrs);
       if (this._mode === "rooms") this._selection = [];
-      if (this._mode === "zones") this._zones = [];
+      if (this._mode === "zones") this._clearZones();
     } catch (err) {
       /* The integration converts its exceptions into readable HomeAssistantError
          messages, so surfacing err.message is genuinely useful here. */
@@ -3028,6 +3342,15 @@ const STYLES = `
   stroke: var(--dv-accent); stroke-width: 3;
 }
 .ovl .zone.draft { stroke-dasharray: 8 6; }
+/* The selected zone reads as picked-up: denser fill, heavier edge. */
+.ovl .zone.sel { fill-opacity: .34; stroke-width: 5; }
+.ovl .zgrip {
+  fill: #fff; stroke: var(--dv-accent); stroke-width: 3;
+}
+.ovl .zdel circle { fill: #e5533d; }
+.ovl .zdel path {
+  stroke: #fff; stroke-width: 2.6; stroke-linecap: round; fill: none;
+}
 .stage-msg { position: absolute; color: var(--dv-dim); font-size: .86rem; }
 .side { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 1px; }
 .side-btn {
@@ -3064,10 +3387,18 @@ const STYLES = `
 .rchip-t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 12rem; }
 
 /* ---------- hint ---------- */
-.hint {
-  text-align: center; font-size: .8rem; color: var(--dv-dim);
-  padding: 10px 8px 0;
+.hintrow {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; padding: 10px 8px 0; flex-wrap: wrap;
 }
+.hint { text-align: center; font-size: .8rem; color: var(--dv-dim); }
+.linkbtn {
+  border: 0; background: none; cursor: pointer; font: inherit;
+  font-size: .8rem; font-weight: 600; color: var(--dv-accent);
+  padding: 2px 4px; border-radius: 8px;
+}
+.linkbtn:hover { text-decoration: underline; }
+.linkbtn:focus-visible { outline: 2px solid var(--dv-accent); outline-offset: 2px; }
 
 /* ---------- custom chip ---------- */
 .chip {

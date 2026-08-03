@@ -1651,7 +1651,10 @@
         "st_drying_left": "Thời gian sấy còn lại",
         "st_bag_drying_left": "Sấy túi bụi còn lại",
         "st_channel_left": "Ống nước thải",
-        "wash_level": "Mức giặt"
+        "wash_level": "Mức giặt",
+        "zone_pick": "Bấm vào một vùng để di chuyển, thay đổi hoặc xoá",
+        "zone_edit": "Kéo để di chuyển, kéo góc để thay đổi, × để xoá",
+        "zone_clear": "Xoá tất cả"
       }
     },
     "frontend_config": {

@@ -425,21 +425,250 @@ if (z._zones.length === 1) {
   ok("reversed drag min-first", x0 < x1 && y0 < y1, JSON.stringify(z._zones[0]));
 }
 
-/* Tapping inside a zone removes it. */
-z = zoneCard(50, c);
-z._commitZone(toImg(1000, 2000), toImg(1400, 2400));
-z._removeZoneAt(toImg(1200, 2200));
-ok("tap inside a zone removes it", z._zones.length === 0);
-
-z = zoneCard(50, c);
-z._commitZone(toImg(1000, 2000), toImg(1400, 2400));
-z._removeZoneAt(toImg(5000, 5000));
-ok("tap outside leaves the zone alone", z._zones.length === 1);
-
 /* Degenerate calibration must not create zones. */
 z = zoneCard(50, degenerate);
 z._commitZone({ x: 0, y: 0 }, { x: 500, y: 500 });
 ok("no zones without a usable calibration", z._zones.length === 0);
+
+ok(
+  "committing returns the new index",
+  (() => {
+    const q = zoneCard(50, c);
+    return (
+      q._commitZone(toImg(1000, 2000), toImg(1400, 2400)) === 0 &&
+      q._commitZone(toImg(2000, 3000), toImg(2400, 3400)) === 1
+    );
+  })()
+);
+ok(
+  "a rejected commit returns null",
+  zoneCard(50, c)._commitZone(toImg(0, 0), toImg(90, 90)) === null
+);
+
+/* ---------------------------------------------------------------- *
+ * 6b. Zone editing: hit test, select, move, resize, delete
+ *
+ * Tapping a zone used to delete it, which meant a stray tap on the map silently
+ * destroyed work and there was no way to adjust a zone at all. Tap now selects;
+ * deletion is explicit.
+ * ---------------------------------------------------------------- */
+console.log("\n[Zone editing]");
+
+/* _moveZone and the chrome helpers consult the rendered image, so the fixture
+   needs the same _el.img shape the card reads. */
+/* `rendered` is the on-screen width; leaving it below `natural` is what exposes a
+   scale bug. The stub must use _imageRect's real key names ({left, top, width,
+   height}) - an earlier version invented {x, y, w, h} and hid exactly that bug. */
+function editCard(grid, calib, natural, rendered) {
+  const q = zoneCard(grid, calib);
+  const nat = natural || { w: 1000, h: 1000 };
+  const rw = rendered || nat.w;
+  q._el = {
+    img: { naturalWidth: nat.w, naturalHeight: nat.h },
+  };
+  q._imageRect = () => ({
+    left: 0,
+    top: 0,
+    width: rw,
+    height: (nat.h * rw) / nat.w,
+  });
+  q._zoneSel = null;
+  return q;
+}
+
+let e = editCard(50, c);
+e._commitZone(toImg(1000, 2000), toImg(1400, 2400));
+ok("zone found under an inside point", e._zoneAt(toImg(1200, 2200)) === 0);
+ok("no zone under an outside point", e._zoneAt(toImg(5000, 5000)) === null);
+
+/* Overlapping zones: the later one paints on top, so it must also win the tap. */
+e = editCard(50, c);
+e._commitZone(toImg(1000, 2000), toImg(1600, 2600));
+e._commitZone(toImg(1200, 2200), toImg(1800, 2800));
+ok("the topmost zone wins an overlap", e._zoneAt(toImg(1300, 2300)) === 1);
+
+/* --- move --- */
+e = editCard(50, c);
+e._commitZone(toImg(1000, 2000), toImg(1400, 2400));
+e._moveZone(0, 300, -200);
+ok(
+  "move shifts the whole zone",
+  JSON.stringify(e._zones[0]) === JSON.stringify([1300, 1800, 1700, 2200]),
+  JSON.stringify(e._zones[0])
+);
+const movedSize = e._zones[0][2] - e._zones[0][0];
+ok("move preserves the size", movedSize === 400, String(movedSize));
+
+/* The map is 1000x1000 image px; with this calibration that is 0..10000 vacuum in
+   x and -5000..5000 in y, so a big push must stop at the edge, not sail past. */
+e = editCard(50, c);
+e._commitZone(toImg(1000, 2000), toImg(1400, 2400));
+const before = e._zones[0][2] - e._zones[0][0];
+e._moveZone(0, 999999, 0);
+const b = e._mapBounds();
+ok("map bounds are derived", !!b, JSON.stringify(b));
+ok("move clamps at the map edge", e._zones[0][2] <= Math.round(b.maxX) + 1, JSON.stringify(e._zones[0]));
+ok("clamping does not shrink the zone", e._zones[0][2] - e._zones[0][0] === before);
+
+/* --- resize --- */
+e = editCard(50, c);
+e._commitZone(toImg(1000, 2000), toImg(1400, 2400));
+e._resizeZone(0, "se", { x: 2000, y: 3000 });
+ok(
+  "dragging se grows the far corner only",
+  JSON.stringify(e._zones[0]) === JSON.stringify([1000, 2000, 2000, 3000]),
+  JSON.stringify(e._zones[0])
+);
+
+e = editCard(50, c);
+e._commitZone(toImg(1000, 2000), toImg(1400, 2400));
+e._resizeZone(0, "nw", { x: 800, y: 1800 });
+ok(
+  "dragging nw grows the near corner only",
+  JSON.stringify(e._zones[0]) === JSON.stringify([800, 1800, 1400, 2400]),
+  JSON.stringify(e._zones[0])
+);
+
+/* Collapsing a corner past its opposite must clamp to the robot's minimum, not
+   invert the rectangle or produce something the robot rejects. */
+e = editCard(50, c);
+e._commitZone(toImg(1000, 2000), toImg(1400, 2400));
+e._resizeZone(0, "nw", { x: 9999, y: 9999 });
+const [rx0, ry0, rx1, ry1] = e._zones[0];
+ok("resize never inverts the rect", rx0 < rx1 && ry0 < ry1, JSON.stringify(e._zones[0]));
+ok(
+  "resize clamps to the backend minimum",
+  rx1 - rx0 >= 110 && ry1 - ry0 >= 110,
+  `${rx1 - rx0} x ${ry1 - ry0}`
+);
+
+/* --- delete and selection bookkeeping --- */
+e = editCard(50, c);
+e._commitZone(toImg(1000, 2000), toImg(1400, 2400));
+e._commitZone(toImg(2000, 3000), toImg(2400, 3400));
+e._commitZone(toImg(3000, 4000), toImg(3400, 4400));
+e._zoneSel = 2;
+e._removeZone(2);
+ok("deleting the selected zone clears the selection", e._zoneSel === null);
+ok("deleting removes exactly one", e._zones.length === 2);
+
+e._zoneSel = 1;
+e._removeZone(0);
+ok(
+  "deleting below the selection shifts the index down",
+  e._zoneSel === 0,
+  String(e._zoneSel)
+);
+
+e = editCard(50, c);
+e._commitZone(toImg(1000, 2000), toImg(1400, 2400));
+e._commitZone(toImg(2000, 3000), toImg(2400, 3400));
+e._zoneSel = 0;
+e._removeZone(1);
+ok("deleting above the selection leaves it alone", e._zoneSel === 0);
+
+e._removeZone(99);
+ok("deleting an out-of-range index is a no-op", e._zones.length === 1);
+
+e = editCard(50, c);
+e._commitZone(toImg(1000, 2000), toImg(1400, 2400));
+e._zoneSel = 0;
+e._clearZones();
+ok("clear all empties the list", e._zones.length === 0);
+ok("clear all drops the selection", e._zoneSel === null);
+
+/* --- chrome geometry --- */
+e = editCard(50, c);
+e._commitZone(toImg(1000, 2000), toImg(1400, 2400));
+e._zoneSel = 0;
+const chrome = e._zoneChrome(0);
+ok("chrome is produced for the selection", !!chrome);
+ok(
+  "grips sit on the corners",
+  chrome &&
+    chrome.corners.nw.x === chrome.rect.x &&
+    chrome.corners.se.x === chrome.rect.x + chrome.rect.w
+);
+ok(
+  "the delete badge sits above the top-right corner",
+  chrome && chrome.badge.x === chrome.corners.ne.x && chrome.badge.y < chrome.corners.ne.y
+);
+
+/* The overlay clips to the image, so a zone against an edge must not have its only
+   delete affordance cut in half. This calibration puts image y=0 at vacuum
+   y=5000 and image x=1000 at vacuum x=9000, and the fixture image is 1000x1000. */
+let edge = editCard(50, c);
+edge._commitZone(toImg(1000, 4600), toImg(1600, 4990)); // hard against the top
+edge._zoneSel = 0;
+const topChrome = edge._zoneChrome(0);
+ok(
+  "the top-edge zone really is at the top",
+  topChrome && topChrome.rect.y < 15,
+  JSON.stringify(topChrome && topChrome.rect)
+);
+ok(
+  "a top-edge badge is tucked inside the zone",
+  topChrome && topChrome.badge.y - topChrome.badge.r >= 0,
+  JSON.stringify(topChrome && topChrome.badge)
+);
+ok(
+  "a top-edge badge stays hit-testable",
+  edge._zoneChromeAt({ x: topChrome.badge.x, y: topChrome.badge.y }) === "delete"
+);
+
+edge = editCard(50, c);
+edge._commitZone(toImg(8600, 1000), toImg(8990, 1600)); // hard against the right
+edge._zoneSel = 0;
+const rightChrome = edge._zoneChrome(0);
+ok(
+  "the right-edge zone really is at the right",
+  rightChrome && rightChrome.rect.x + rightChrome.rect.w > 985,
+  JSON.stringify(rightChrome && rightChrome.rect)
+);
+ok(
+  "a right-edge badge is pulled inside the image",
+  rightChrome && rightChrome.badge.x + rightChrome.badge.r <= 1000,
+  JSON.stringify(rightChrome && rightChrome.badge)
+);
+ok(
+  "the grab radius is more forgiving than the drawn one",
+  chrome && chrome.grab > chrome.handle
+);
+
+/* Grips are sized for a finger, which is a client-space quantity drawn in image
+   space: on a map painted at half size they must come out twice as big, or they
+   end up unhittable on a big map in a small card. */
+ok("scale is 1 when the map is painted at natural size", e._imgScale() === 1);
+const halved = editCard(50, c, { w: 1000, h: 1000 }, 500);
+halved._commitZone(toImg(1000, 2000), toImg(1400, 2400));
+halved._zoneSel = 0;
+ok("scale reflects the painted size", halved._imgScale() === 2, String(halved._imgScale()));
+const halvedChrome = halved._zoneChrome(0);
+ok(
+  "a half-size map gets double-size grips",
+  halvedChrome && halvedChrome.grab === chrome.grab * 2,
+  `${halvedChrome && halvedChrome.grab} vs ${chrome.grab}`
+);
+ok("no chrome without a selection", e._zoneChrome(7) === null);
+
+/* Hit priority: a corner grip overlaps the zone body, and must win. */
+ok(
+  "a corner grip beats the zone body",
+  e._zoneChromeAt({ x: chrome.corners.nw.x, y: chrome.corners.nw.y }) === "nw"
+);
+ok(
+  "the badge is hit above the corner",
+  e._zoneChromeAt({ x: chrome.badge.x, y: chrome.badge.y }) === "delete"
+);
+ok(
+  "the zone middle is not chrome",
+  e._zoneChromeAt({
+    x: chrome.rect.x + chrome.rect.w / 2,
+    y: chrome.rect.y + chrome.rect.h / 2,
+  }) === null
+);
+e._zoneSel = null;
+ok("nothing is chrome without a selection", e._zoneChromeAt({ x: 0, y: 0 }) === null);
 
 /* ---------------------------------------------------------------- *
  * 7. Wet control abstraction (select vs wetness number)

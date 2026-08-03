@@ -1651,7 +1651,10 @@
         "st_drying_left": "Drying time left",
         "st_bag_drying_left": "Dust bag drying left",
         "st_channel_left": "Dirty water channel",
-        "wash_level": "Wash level"
+        "wash_level": "Wash level",
+        "zone_pick": "Tap a zone to move, resize or delete it",
+        "zone_edit": "Drag to move, drag a corner to resize, × to delete",
+        "zone_clear": "Clear all"
       }
     },
     "frontend_config": {
