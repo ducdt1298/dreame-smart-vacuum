@@ -438,7 +438,7 @@ Change currently selected map. (Only possible of multi-floor map is enabled)
 Delete a map.
 
 > - You can acquire map id from saved map camera entity attributes.
-> - When multi-floor map feature is enabled map indexes may change after deletion. <a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/#multi-floor-map-support" target="_blank">(More about multi-floor map support)</a>
+> - When multi-floor map feature is enabled map indexes may change after deletion. <a href="https://github.com/ducdt1298/dreame-smart-vacuum/blob/main/docs/#multi-floor-map-support" target="_blank">(More about multi-floor map support)</a>
 
 **Example:**
 
@@ -593,7 +593,7 @@ Discard newly created map.
 Replace new map with an old one.
 
 > - You can acquire map id from saved map camera entity attributes.
-> - When multi-floor map feature is enabled map indexes may change after replacing the map. Replaced new map will always be at last available index event replaced with a lower indexed map. <a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/#multi-floor-map-support" target="_blank">(More about multi-floor map support)</a>
+> - When multi-floor map feature is enabled map indexes may change after replacing the map. Replaced new map will always be at last available index event replaced with a lower indexed map. <a href="https://github.com/ducdt1298/dreame-smart-vacuum/blob/main/docs/#multi-floor-map-support" target="_blank">(More about multi-floor map support)</a>
 
 **Example:**
 
@@ -735,4 +735,4 @@ Select previous option from options list
 
 Select next option from options list
 
-**<a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/room_entities.md#rooms-card" target="_blank">For more info about how these services are used</a>**
+**<a href="https://github.com/ducdt1298/dreame-smart-vacuum/blob/main/room_entities.md#rooms-card" target="_blank">For more info about how these services are used</a>**

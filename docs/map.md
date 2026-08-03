@@ -2,7 +2,7 @@
 
 Completely reverse engineered map data handling, decoding and rendering for live and multiple saved map support with all features provided with the official App.
 
-<img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/live_map.jpg" width="400px">
+<img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/live_map.jpg" width="400px">
 
 - High resolution image rendering with layer caching for improving performance.
 - All resources with icon position and color index finding algorithms are extracted from the official App for same look and feel.
@@ -14,7 +14,7 @@ Completely reverse engineered map data handling, decoding and rendering for live
 
 Partial map (P frame type) decoding for three seconds refresh rate with three seconds delay same as with the official App.
 
-<a href="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/cleaning.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/cleaning.gif" width="500px"></a>
+<a href="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/cleaning.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/cleaning.gif" width="500px"></a>
 
 > - P type maps are introduced with second generation robots and new devices only sends P frames to the cloud when running.
 > - P maps are only containing the difference between its previous frame therefore handling is much harder than standard I type maps.
@@ -32,7 +32,7 @@ Five available color schemes for live and saved maps:
 
  > Map color scheme can be changed from integration configuration options.
 
-<a href="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/map_dreame_light.png" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/map_dreame_light.png" width="19%"></a><a href="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/map_dreame_dark.png" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/map_dreame_dark.png" width="19%"></a><a href="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/map_mijia_light.png" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/map_mijia_light.png" width="19%"></a><a href="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/map_mijia_dark.png" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/map_mijia_dark.png" width="19%"></a><a href="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/map_grayscale.png" target="_blank"><a href="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/map_grayscale.png" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/map_grayscale.png" width="19%"></a>
+<a href="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/map_dreame_light.png" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/map_dreame_light.png" width="19%"></a><a href="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/map_dreame_dark.png" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/map_dreame_dark.png" width="19%"></a><a href="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/map_mijia_light.png" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/map_mijia_light.png" width="19%"></a><a href="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/map_mijia_dark.png" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/map_mijia_dark.png" width="19%"></a><a href="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/map_grayscale.png" target="_blank"><a href="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/map_grayscale.png" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/map_grayscale.png" width="19%"></a>
 
 ### Room and customized cleaning icons
 
@@ -45,22 +45,22 @@ Dynamically rendered icons and texts for:
 - Water level
 - Cleaning Times
 
-<a href="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/map_icons.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/map_icons.gif" width="500px"></a>
+<a href="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/map_icons.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/map_icons.gif" width="500px"></a>
 
 
 ### Dynamic object rendering for job types
 
 Custom rendering rules extracted from the official App for specific type of job and robot state.
 
-<a href="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/room_cleaning.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/room_cleaning.gif" width="400px"></a><a href="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/zone_cleaning.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/zone_cleaning.gif" width="400px"></a>
+<a href="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/room_cleaning.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/room_cleaning.gif" width="400px"></a><a href="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/zone_cleaning.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/zone_cleaning.gif" width="400px"></a>
 
-**<a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/README.md#with-xiaomi-vacuum-map-card" target="_blank">For more info about Xiaomi Vacuum map card</a>**
+**<a href="https://github.com/ducdt1298/dreame-smart-vacuum/blob/main/README.md#with-xiaomi-vacuum-map-card" target="_blank">For more info about Xiaomi Vacuum map card</a>**
 
 ### Fast mapping and spot cleaning
 
 Live mapping support with *new map* handling, parsing and rendering.
 
-<a href="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/fast_mapping.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/fast_mapping.gif" width="400px"></a><a href="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/spot_cleaning.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/spot_cleaning.gif" width="400px"></a>
+<a href="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/fast_mapping.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/fast_mapping.gif" width="400px"></a><a href="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/spot_cleaning.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/spot_cleaning.gif" width="400px"></a>
 
 > When robot is fast mapping or spot cleaning it creates a new map on its memory and does not responds to local map_request api actions. Newly created map does not have an object name yet so it can only be accessed via cloud map_data property. New map data requires different decoding and rendering rules because of that there are currently no other available map decoder library for this types of maps.
 
@@ -70,7 +70,7 @@ Vacuum icon overlays for displaying device state same as on the official App.
 
 | <div style="width:70px">Sleeping</div> | <div style="width:70px">Idle</div> | <div style="width:70px">Active</div> | <div style="width:70px">Charging</div> | <div style="width:70px">Error</div> | 
 |:--------:|:--------:|:--------:|:--------:|:--------:| 
-| <img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/robot_sleeping.png" width="50px"> | <img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/robot_idle.png" width="50px"> | <img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/robot_active.png" width="50px"> | <img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/robot_charging.png" width="50px"> | <img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/robot_error.png" width="50px"> |
+| <img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/robot_sleeping.png" width="50px"> | <img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/robot_idle.png" width="50px"> | <img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/robot_active.png" width="50px"> | <img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/robot_charging.png" width="50px"> | <img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/robot_error.png" width="50px"> |
 
 > Warnings are clearable via notifications or `clear_warning` service for restoring robot state on map.
 
@@ -80,31 +80,31 @@ Up to three saved maps with auto generated camera and select entities for multip
 
 > Saved maps uses `[original map id][version]` as their `map_id` format (e.g. `46`). Because of that map ids are constantly changing and cannot be used on entity ids. Instead, map camera entities uses indexing system. Map indexes created from map id ordered saved map list and used for naming maps without custom names. Therefore when  `map_2` removed from the list, `map_3` will be deleted instead and `map_3` will become `map_2` (exactly how handled on the official App). If Multi-floor map is disabled when multiple saved maps exists `map_1` always become the selected map instead of other maps being deleted.
 
-<a href="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/multi_map.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/multi_map.gif" width="500px"></a>
+<a href="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/multi_map.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/multi_map.gif" width="500px"></a>
 
 ### Map entities
 
 Automatically generated saved and live map entities for map editing and automations.
 
-<img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/map_entities.png" width="500px">
+<img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/map_entities.png" width="500px">
 
-**<a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/entities.md#select" target="_blank">For more info about map entities</a>**
+**<a href="https://github.com/ducdt1298/dreame-smart-vacuum/blob/main/docs/entities.md#select" target="_blank">For more info about map entities</a>**
 
 ### Dynamic room entities for selected map
 
 Automatically generated room entities for room and customized cleaning settings.
 
-<a href="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/rooms.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/rooms.gif" width="500px"></a>
+<a href="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/rooms.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/rooms.gif" width="500px"></a>
 
-**<a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/room_entities.md" target="_blank">For more info about room entities</a>**
+**<a href="https://github.com/ducdt1298/dreame-smart-vacuum/blob/main/room_entities.md" target="_blank">For more info about room entities</a>**
 
 ### Map and room editing services
 
 Services for available map operations provided with the official App.
 
-<a href="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/merge_segments.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/merge_segments.gif" width="400px"></a><a href="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/split_segments.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/split_segments.gif" width="400px"></a>
+<a href="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/merge_segments.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/merge_segments.gif" width="400px"></a><a href="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/split_segments.gif" target="_blank"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/split_segments.gif" width="400px"></a>
 
-**<a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/services.md#map-services" target="_blank">For more info about map services</a>**
+**<a href="https://github.com/ducdt1298/dreame-smart-vacuum/blob/main/docs/services.md#map-services" target="_blank">For more info about map services</a>**
 
 ### Valetudo map card support
 
@@ -112,9 +112,9 @@ Reverse engineered Valetudo map data generation with optimization features.
 
 > Valetudo map card uses its own color index algorithm, does not render room icons or names and ignores the map rotation setting from map data. But it can generate images much more quickly since map image rendering actually happens on browser.
 
-<img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/valetudo_map.png" width="500px">
+<img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/valetudo_map.png" width="500px">
 
-**<a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/README.md#with-valetudo-map-card" target="_blank">For more info about valetudo map card</a>**
+**<a href="https://github.com/ducdt1298/dreame-smart-vacuum/blob/main/README.md#with-valetudo-map-card" target="_blank">For more info about valetudo map card</a>**
 
 ### Map Icon Set
 
@@ -371,9 +371,9 @@ Recovery maps can be displayed and downloaded via related `Saved or Current Map`
 
 `http://local.homeassistant/api/camera_recovery_map_proxy/camera.vacuum_map_1?token=5df93cfcf8ecc23fa17b233ca938cc52f41e2b17a46ca291865be3f9ba64d89b&index=2&file=1`
 
-<a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/services.md#dreame_smart_vacuumvacuum_restore_map" target="_blank">**How to restore the map**</a>
+<a href="https://github.com/ducdt1298/dreame-smart-vacuum/blob/main/docs/services.md#dreame_smart_vacuumvacuum_restore_map" target="_blank">**How to restore the map**</a>
 
-<a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/services.md#dreame_smart_vacuumvacuum_backup_map" target="_blank">**How to trigger backup to the cloud (Only on supported devices)**</a>
+<a href="https://github.com/ducdt1298/dreame-smart-vacuum/blob/main/docs/services.md#dreame_smart_vacuumvacuum_backup_map" target="_blank">**How to trigger backup to the cloud (Only on supported devices)**</a>
 
 #### Map Recovery Card
 
@@ -459,7 +459,7 @@ styles:
 
 ### WiFi Map
 
-Saved WiFi maps can be displayed using <a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/entities.md#camera" target="_blank">`Saved WiFi Map` camera entities</a> (disabled by default) or alternatively via related `Saved or Current Map` entity camera proxy.
+Saved WiFi maps can be displayed using <a href="https://github.com/ducdt1298/dreame-smart-vacuum/blob/main/docs/entities.md#camera" target="_blank">`Saved WiFi Map` camera entities</a> (disabled by default) or alternatively via related `Saved or Current Map` entity camera proxy.
 
 > WiFi maps for all saved maps may not be available on the device.
 
@@ -507,4 +507,4 @@ Map will be rendered at 1:1 ratio when this option is enabled from configuration
 Low resolution configuration option must be enabled when Home Assistant instance running on a system or container with less than 3GB memory otherwise Home Assistance instance may not start since integration uses a lot of memory for rendering zoomable high resolution images like official APP.
 
 
-### <a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/README.md#how-to-use" target="_blank">How to view the map on the dashboard</a>
+### <a href="https://github.com/ducdt1298/dreame-smart-vacuum/blob/main/README.md#how-to-use" target="_blank">How to view the map on the dashboard</a>

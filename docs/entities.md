@@ -1,5 +1,5 @@
 # Entities
-<img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/entities.png">
+<img src="https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/docs/media/entities.png">
 
 - Integration exposes *almost* all available settings and states reverse engineered from the official App. 
 - Almost all entities are dynamically exposed for specific device. If the device does not have property that tied to specific entity, integration will not add that entity to the Home Assistant.
@@ -109,7 +109,7 @@
 | `dust_collection`   | Dust collection is available, not available or not performed due to do not disturb settings | Available on vacuums with auto-empty station
 | `auto_empty_status`   | Status of auto empty dock | Available on vacuums with auto-empty station
 | `self_wash_base_status`   | Status of self-wash base | Available on vacuums with self-wash base
-| `error`   | Fault code description of robot | <a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/notifications.md#error-reporting" target="_blank">Error reporting</a>
+| `error`   | Fault code description of robot | <a href="https://github.com/ducdt1298/dreame-smart-vacuum/blob/main/docs/notifications.md#error-reporting" target="_blank">Error reporting</a>
 | `charging_status`   | Charging status of the robot |
 | `battery_level`   | Battery level of the robot |
 | `first_cleaning_date`   | First cleaning date |
@@ -304,7 +304,7 @@
 | `floor_material_direction`   | TODO | 
 | `visibility`   | TODO |
 
-#### <a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/room_entities/map.md" target="_blank">For more info about customized cleaning feature</a>
+#### <a href="https://github.com/ducdt1298/dreame-smart-vacuum/blob/main/room_entities/map.md" target="_blank">For more info about customized cleaning feature</a>
 
 ## Camera
 
@@ -326,8 +326,8 @@
 - All camera entities has different dynamic refresh rate determined by its last request time and device state.
 - Camera will only render a map when an image request has been made and only render changed areas of the image.
 - Saved map camera names generated dynamically from index or custom name.
-- Saved map entities for multi-floor map entities uses indexing system instead of map id. <a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/map.md#multi-floor-map-support" target="_blank">More info</a>
+- Saved map entities for multi-floor map entities uses indexing system instead of map id. <a href="https://github.com/ducdt1298/dreame-smart-vacuum/blob/main/docs/map.md#multi-floor-map-support" target="_blank">More info</a>
 - Live map is not editable and renders saved map after an edit has been made until robot starts cleaning.
 - *map_1* entity always renders saved map of currently selected map when multi-floor map is disabled
 
-#### <a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/map.md" target="_blank">For more info about map feature</a>
+#### <a href="https://github.com/ducdt1298/dreame-smart-vacuum/blob/main/docs/map.md" target="_blank">For more info about map feature</a>

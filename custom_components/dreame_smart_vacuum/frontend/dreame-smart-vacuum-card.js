@@ -2671,7 +2671,7 @@ if (!window.customCards.some((c) => c.type === "dreame-smart-vacuum-card")) {
     description:
       "Dreame-app style daily driver: battery + status, tap rooms on the map, start cleaning.",
     preview: true,
-    documentationURL: "https://github.com/ducdt1298/dreame-vacuum",
+    documentationURL: "https://github.com/ducdt1298/dreame-smart-vacuum",
   });
 }
 

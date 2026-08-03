@@ -1,5 +1,5 @@
 #!/bin/bash
-# wget -O - https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/install | bash -
+# wget -O - https://raw.githubusercontent.com/ducdt1298/dreame-smart-vacuum/main/install | bash -
 set -e
 
 declare path
@@ -27,7 +27,7 @@ if [ -n "$path" ]; then
         mkdir "$path/custom_components"
     fi
     cd "$path/custom_components"
-    wget "https://github.com/ducdt1298/dreame-vacuum/releases/download/v2.0.0b25/dreame_smart_vacuum.zip"
+    wget "https://github.com/ducdt1298/dreame-smart-vacuum/releases/latest/download/dreame_smart_vacuum.zip"
     if [ -d "$path/custom_components/dreame_smart_vacuum" ]; then
         rm -R "$path/custom_components/dreame_smart_vacuum"
     fi
