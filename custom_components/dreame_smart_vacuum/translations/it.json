@@ -1614,7 +1614,8 @@
         "virtual_wall": "Muro",
         "wash": "Lava",
         "washing_unavailable": "Lavaggio non disp.",
-        "wifi_map": "Mappa Wi-Fi"
+        "wifi_map": "Mappa Wi-Fi",
+        "dock_station": "Base"
       }
     },
     "frontend_config": {

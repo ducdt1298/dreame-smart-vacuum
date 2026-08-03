@@ -1613,7 +1613,8 @@
         "virtual_wall": "Muur",
         "wash": "Wassen",
         "washing_unavailable": "Wassen n. besch.",
-        "wifi_map": "Wifi-kaart"
+        "wifi_map": "Wifi-kaart",
+        "dock_station": "Dock"
       }
     },
     "frontend_config": {

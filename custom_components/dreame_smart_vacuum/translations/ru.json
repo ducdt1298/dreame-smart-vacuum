@@ -1613,7 +1613,8 @@
         "virtual_wall": "Стена",
         "wash": "Стирка",
         "washing_unavailable": "Стирка недоступна",
-        "wifi_map": "Карта Wi-Fi"
+        "wifi_map": "Карта Wi-Fi",
+        "dock_station": "Док-станция"
       }
     },
     "frontend_config": {

@@ -109,6 +109,51 @@ backend, where CleanGenius marks suction, water and cleaning mode unavailable. T
 explicitly sets CleanGenius to `off` before a manual run, because segment cleaning does *not*
 disable it automatically and would otherwise ignore your suction and water choice.
 
+### Start and Về sạc / Return to dock
+
+The action row holds only commands for the robot: **Start** (which becomes Pause / Resume
+while a job runs) and **Return to dock**.
+
+The return button is stateful, which the earlier static one was not: it reads
+`Dừng về sạc` and turns into a pause icon while the robot is on its way home, and it
+disables itself when there is nothing to return from — parked on the dock, or busy washing
+or drying on it. There is no "cancel return" service, so stopping a return is sent as
+`vacuum.pause`.
+
+## The dock sheet
+
+The dock icon in the header opens a separate sheet for the base station. It is deliberately
+*not* in the action row: the previous button was labelled with the noun "Đế sạc" yet only
+sent `return_to_base`, which read as a promise of dock controls that did not exist.
+
+Three tabs:
+
+- **Điều khiển / Controls** — grouped by function (mop washing, drying, auto-empty, water
+  tank, detergent). Each group leads with its one-shot actions — wash the mop now, dry now,
+  empty the bin now, drain the water, clean the dock, self-repair — then its settings:
+  toggles, segmented pickers, and steppers for the numeric ones.
+- **Trạng thái / Status** — read-only. Base-station status, drying progress as a bar plus
+  time remaining, auto-empty and dust-bag status, clean/dirty water tank, detergent, hot
+  water, drainage, whether the tank and mop pad are fitted, and the low-water warning.
+- **Vật tư / Supplies** — percentage left for detergent, squeegee, on-board dirty water
+  tank, dirty water channel, deodorizer and scale inhibitor. Each bar turns red at 10% or
+  less and carries its own **Đặt lại / Reset** button.
+
+### Everything here is optional
+
+The sheet is driven by a table of rows (`DOCK_ROWS` in the card), each naming an entity by
+its `translation_key`. The integration gates every one of those entities behind a device
+capability, so a machine without a wash base simply resolves fewer of them — the row
+disappears, an empty group disappears, and a tab with nothing in it says so rather than
+showing dead controls. **Never assume a row is present.**
+
+For the same reason the ~60 dock entities are watched for changes only while the sheet is
+open; watching them permanently would defeat the card's render early-out.
+
+Two figures are intentionally left out: the `*_time_left` companions to each supply
+percentage (days remaining), which would double the length of the Supplies tab for
+information the percentage already conveys.
+
 Suction is hidden in mop-only mode, and humidity is hidden in sweep-only mode.
 
 ### Per-room settings

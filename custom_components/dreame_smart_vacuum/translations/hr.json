@@ -1613,7 +1613,8 @@
         "virtual_wall": "Zid",
         "wash": "Operi",
         "washing_unavailable": "Pranje je nedostupno",
-        "wifi_map": "WiFi karta"
+        "wifi_map": "WiFi karta",
+        "dock_station": "Postaja"
       }
     },
     "frontend_config": {

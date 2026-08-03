@@ -1613,7 +1613,8 @@
         "virtual_wall": "กำแพงเสมือน",
         "wash": "ซัก",
         "washing_unavailable": "การซักไม่พร้อมใช้งาน",
-        "wifi_map": "แผนที่ WiFi"
+        "wifi_map": "แผนที่ WiFi",
+        "dock_station": "แท่นชาร์จ"
       }
     },
     "frontend_config": {

@@ -1613,7 +1613,8 @@
         "virtual_wall": "Wand",
         "wash": "Waschen",
         "washing_unavailable": "Waschen n. verf.",
-        "wifi_map": "WLAN-Karte"
+        "wifi_map": "WLAN-Karte",
+        "dock_station": "Dock"
       }
     },
     "frontend_config": {

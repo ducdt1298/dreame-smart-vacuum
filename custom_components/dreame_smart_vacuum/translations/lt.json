@@ -1613,7 +1613,8 @@
         "virtual_wall": "Siena",
         "wash": "Plauti",
         "washing_unavailable": "Plovimas nepasiekiamas",
-        "wifi_map": "WiFi žemėlapis"
+        "wifi_map": "WiFi žemėlapis",
+        "dock_station": "Stotelė"
       }
     },
     "frontend_config": {

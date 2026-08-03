@@ -1613,7 +1613,8 @@
         "virtual_wall": "Duvar",
         "wash": "Yıka",
         "washing_unavailable": "Yıkama kullanılamıyor",
-        "wifi_map": "WiFi haritası"
+        "wifi_map": "WiFi haritası",
+        "dock_station": "İstasyon"
       }
     },
     "frontend_config": {

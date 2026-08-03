@@ -1613,7 +1613,8 @@
         "virtual_wall": "Vägg",
         "wash": "Tvätta",
         "washing_unavailable": "Tvätt ej tillgänglig",
-        "wifi_map": "Wifi-karta"
+        "wifi_map": "Wifi-karta",
+        "dock_station": "Docka"
       }
     },
     "frontend_config": {

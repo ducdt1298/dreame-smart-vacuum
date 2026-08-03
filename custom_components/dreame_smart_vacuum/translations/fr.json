@@ -1613,7 +1613,8 @@
         "virtual_wall": "Mur",
         "wash": "Laver",
         "washing_unavailable": "Lavage indispo.",
-        "wifi_map": "Carte Wi-Fi"
+        "wifi_map": "Carte Wi-Fi",
+        "dock_station": "Base"
       }
     },
     "frontend_config": {

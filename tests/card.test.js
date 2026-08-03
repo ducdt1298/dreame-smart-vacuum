@@ -55,7 +55,9 @@ const factory = new Function(
   "window",
   "document",
   "console",
-  SRC + "\nreturn { Calibration, RoomGeometry, DreameSmartVacuumCard, SUCTION, WATER, HUMID, MODE };"
+  SRC +
+    "\nreturn { Calibration, RoomGeometry, DreameSmartVacuumCard, SUCTION, WATER, HUMID, MODE," +
+    " DOCK_ROWS, DOCK_TABS, DOCK_GROUPS, ICON };"
 );
 
 const M = factory(
@@ -454,6 +456,173 @@ ok("number wet parses its value", wetCard._wetValue(numWet, "16") === 16);
 ok("number wet rejects junk", wetCard._wetValue(numWet, "abc") === null);
 ok("null value stays null", wetCard._wetValue(selWet, null) === null);
 ok("no wet entity stays null", wetCard._wetValue(null, "moist") === null);
+
+/* ---------------------------------------------------------------- *
+ * 8. Dock sheet spec
+ *
+ * The sheet is data-driven, so a typo in DOCK_ROWS silently drops a row rather
+ * than throwing. These assertions are the only thing standing between a wrong
+ * key and a control that never appears on anyone's dashboard.
+ * ---------------------------------------------------------------- */
+console.log("\n[Dock spec]");
+
+const KINDS = ["action", "toggle", "select", "number", "stat", "bar", "wear"];
+const DOMS = ["button", "switch", "select", "number", "sensor"];
+
+ok("dock rows exist", M.DOCK_ROWS.length > 0);
+ok(
+  "every row sits in a known tab",
+  M.DOCK_ROWS.every((r) => M.DOCK_TABS.includes(r.tab)),
+  M.DOCK_ROWS.filter((r) => !M.DOCK_TABS.includes(r.tab)).map((r) => r.k).join(",")
+);
+ok(
+  "every row has a known kind",
+  M.DOCK_ROWS.every((r) => KINDS.includes(r.kind)),
+  M.DOCK_ROWS.filter((r) => !KINDS.includes(r.kind)).map((r) => r.k).join(",")
+);
+ok(
+  "every row has a known domain",
+  M.DOCK_ROWS.every((r) => DOMS.includes(r.dom)),
+  M.DOCK_ROWS.filter((r) => !DOMS.includes(r.dom)).map((r) => r.k).join(",")
+);
+/* Upstream registers one key with the enum name still half-uppercased, so it is
+   allowed by name here rather than by loosening the pattern for everything. */
+const KEY_OK = (k) =>
+  /^[a-z][a-z0-9_]*$/.test(k) || k === "DIRTY_WATER_CHANNEL_DIRTY_left";
+ok(
+  "translation keys look like keys, not enum names",
+  M.DOCK_ROWS.every((r) => KEY_OK(r.k)),
+  M.DOCK_ROWS.filter((r) => !KEY_OK(r.k)).map((r) => r.k).join(",")
+);
+
+/* Entities resolve into a map keyed "<dom>.<k>", so a duplicate pair would make
+   one row quietly shadow the other. */
+const seen = new Set();
+const dupes = [];
+for (const r of M.DOCK_ROWS) {
+  const id = r.dom + "." + r.k;
+  if (seen.has(id)) dupes.push(id);
+  seen.add(id);
+}
+ok("no duplicate domain+key pairs", dupes.length === 0, dupes.join(","));
+
+/* `self_clean` legitimately exists on two domains - that is the pair the keying
+   scheme was designed for, so assert it survives rather than being deduped. */
+ok(
+  "same key on two domains is kept apart",
+  seen.has("button.self_clean") && seen.has("switch.self_clean")
+);
+
+ok(
+  "action rows carry a label key",
+  M.DOCK_ROWS.filter((r) => r.kind === "action").every((r) => !!r.label)
+);
+ok(
+  "wear rows carry a reset button",
+  M.DOCK_ROWS.filter((r) => r.kind === "wear").every((r) => !!r.reset)
+);
+ok(
+  "every reset target is a button row target",
+  M.DOCK_ROWS.filter((r) => r.reset).every((r) => /^reset_[a-z_]+$/.test(r.reset))
+);
+ok(
+  "every referenced icon exists",
+  M.DOCK_ROWS.every((r) => !r.icon || r.icon in M.ICON),
+  M.DOCK_ROWS.filter((r) => r.icon && !(r.icon in M.ICON)).map((r) => r.icon).join(",")
+);
+ok(
+  "every group icon exists",
+  M.DOCK_GROUPS.every(([, icon]) => icon in M.ICON)
+);
+/* A group with no rows renders nothing, so an unknown grp is a dead entry. */
+const groupNames = M.DOCK_GROUPS.map(([g]) => g);
+ok(
+  "control rows only use declared groups",
+  M.DOCK_ROWS.filter((r) => r.tab === "controls").every((r) =>
+    groupNames.includes(r.grp)
+  ),
+  M.DOCK_ROWS.filter((r) => r.tab === "controls" && !groupNames.includes(r.grp))
+    .map((r) => r.k)
+    .join(",")
+);
+ok(
+  "each tab has at least one row",
+  M.DOCK_TABS.every((t) => M.DOCK_ROWS.some((r) => r.tab === t))
+);
+
+/* All icon paths must be parseable svg path data - a hand-drawn typo here shows
+   up as an invisible or garbled glyph, which is easy to miss by eye. */
+ok(
+  "icon paths only use supported commands",
+  Object.values(M.ICON).every((d) => /^[MmLlHhVvAaCcSsQqTtZz0-9,.\-\s]+$/.test(d)),
+  Object.keys(M.ICON).filter(
+    (k) => !/^[MmLlHhVvAaCcSsQqTtZz0-9,.\-\s]+$/.test(M.ICON[k])
+  ).join(",")
+);
+ok(
+  "icon paths start with a move and are non-trivial",
+  Object.values(M.ICON).every((d) => /^M/.test(d) && d.length > 12)
+);
+
+/* ---------------------------------------------------------------- *
+ * 9. Return-to-dock button state
+ * ---------------------------------------------------------------- */
+console.log("\n[Return button]");
+
+const rb = Object.create(M.DreameSmartVacuumCard.prototype);
+ok("docked disables the button", rb._isDocked({ state: "docked" }, {}) === true);
+ok("cleaning enables it", rb._isDocked({ state: "cleaning" }, {}) === false);
+ok("returning enables it", rb._isDocked({ state: "returning" }, {}) === false);
+ok("paused mid-room enables it", rb._isDocked({ state: "paused" }, {}) === false);
+ok(
+  "washing on the dock disables it",
+  rb._isDocked({ state: "cleaning" }, { washing: true }) === true
+);
+ok(
+  "drying on the dock disables it",
+  rb._isDocked({ state: "cleaning" }, { drying: true }) === true
+);
+ok("a missing vacuum disables it", rb._isDocked(null, null) === true);
+
+/* ---------------------------------------------------------------- *
+ * 10. Dock row labels
+ * ---------------------------------------------------------------- */
+console.log("\n[Dock labels]");
+
+const dl = Object.create(M.DreameSmartVacuumCard.prototype);
+dl._config = { entity: "vacuum.bot" };
+dl._hass = { states: { "vacuum.bot": { attributes: { friendly_name: "Bot" } } } };
+dl._t = (k) => "T:" + k;
+
+ok(
+  "explicit label wins",
+  dl._dockLabel({ k: "drying_left", label: "st_drying_left" }, {}) ===
+    "T:st_drying_left"
+);
+ok(
+  "device name prefix is stripped",
+  dl._dockLabel(
+    { k: "dust_bag_status" },
+    { attributes: { friendly_name: "Bot Dust bag status" } }
+  ) === "Dust bag status"
+);
+ok(
+  "an unprefixed name is left alone",
+  dl._dockLabel(
+    { k: "dust_bag_status" },
+    { attributes: { friendly_name: "Dust bag status" } }
+  ) === "Dust bag status"
+);
+ok(
+  "a name equal to the device name is not blanked",
+  dl._dockLabel({ k: "water_tank" }, { attributes: { friendly_name: "Bot" } }) ===
+    "Bot"
+);
+ok(
+  "no friendly_name falls back to the key",
+  dl._dockLabel({ k: "clean_water_tank_status" }, { attributes: {} }) ===
+    "clean water tank status"
+);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

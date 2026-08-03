@@ -1613,7 +1613,8 @@
         "virtual_wall": "جدار",
         "wash": "غسل",
         "washing_unavailable": "الغسيل غير متوفر",
-        "wifi_map": "خريطة الواي فاي"
+        "wifi_map": "خريطة الواي فاي",
+        "dock_station": "إرساء بالمحطة"
       }
     },
     "frontend_config": {

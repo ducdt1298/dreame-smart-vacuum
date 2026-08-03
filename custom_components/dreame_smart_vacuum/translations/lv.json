@@ -1613,7 +1613,8 @@
         "virtual_wall": "Siena",
         "wash": "Mazgāt",
         "washing_unavailable": "Mazgāšana nav pieejama",
-        "wifi_map": "Wi-Fi karte"
+        "wifi_map": "Wi-Fi karte",
+        "dock_station": "Bāze"
       }
     },
     "frontend_config": {

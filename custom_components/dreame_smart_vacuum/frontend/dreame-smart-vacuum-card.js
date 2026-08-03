@@ -39,7 +39,121 @@ const ICON = {
     "M12,16L19.36,10.27L21,9L12,2L3,9L4.63,10.27M12,18.54L4.62,12.81L3,14.07L12,21.07L21,14.07L19.37,12.8L12,18.54Z",
   repeat:
     "M17,17H7V14L3,18L7,22V19H19V13H17M7,7H17V10L21,6L17,2V5H5V11H7V7Z",
+  /* Dock sheet. Hand-drawn rather than pulled from mdi so the geometry stays
+     simple enough to eyeball at 17px. */
+  station:
+    "M5,3H19A2,2 0 0,1 21,5V15A2,2 0 0,1 19,17H14V19H17V21H7V19H10V17H5A2,2 0 0,1 3,15V5A2,2 0 0,1 5,3M5,5V15H19V5H5Z",
+  dry: "M4,6H14V8H4V6M4,11H20V13H4V11M4,16H11V18H4V16Z",
+  bag: "M8,3H16L17,7H7L8,3M6,9H18L16.8,20A1,1 0 0,1 15.8,21H8.2A1,1 0 0,1 7.2,20L6,9Z",
+  bottle:
+    "M10,2H14V4H15A2,2 0 0,1 17,6V20A2,2 0 0,1 15,22H9A2,2 0 0,1 7,20V6A2,2 0 0,1 9,4H10V2M9,10V20H15V10H9Z",
+  chart:
+    "M4,18H20V20H4V18M6,13H8V17H6V13M10,9H12V17H10V9M14,5H16V17H14V5M18,11H20V17H18V11Z",
+  plus: "M11,5H13V11H19V13H13V19H11V13H5V11H11V5Z",
+  minus: "M5,11H19V13H5V11Z",
 };
+
+/* ------------------------------------------------------------------ *
+ * 0b. Dock sheet contents
+ *
+ * `k` is the entity's translation_key. entity.py sets
+ * `_attr_translation_key = description.key`, and description.key falls back to
+ * PROPERTY_TO_NAME[prop][0], so these strings are exactly what the registry
+ * carries and what _resolveEntities matches on.
+ *
+ * Every row is optional: the integration gates each entity behind a device
+ * capability, so a machine without a wash base simply resolves fewer of them and
+ * the row - and an empty tab - disappears. Never assume a row exists.
+ * ------------------------------------------------------------------ */
+
+const DOCK_ROWS = [
+  /* --- Controls: one-shot actions ---------------------------------- */
+  { tab: "controls", grp: "wash", kind: "action", dom: "button", k: "self_clean", label: "act_wash_now", icon: "water" },
+  { tab: "controls", grp: "wash", kind: "action", dom: "button", k: "base_station_cleaning", label: "act_clean_station", icon: "autorenew" },
+  { tab: "controls", grp: "wash", kind: "action", dom: "button", k: "base_station_self_repair", label: "act_self_repair", icon: "autofix" },
+  { tab: "controls", grp: "dry", kind: "action", dom: "button", k: "manual_drying", label: "act_dry_now", icon: "dry" },
+  { tab: "controls", grp: "dry", kind: "action", dom: "button", k: "manual_dust_bag_drying", label: "act_dry_bag", icon: "bag" },
+  { tab: "controls", grp: "empty", kind: "action", dom: "button", k: "start_auto_empty", label: "act_empty_now", icon: "bag" },
+  { tab: "controls", grp: "water", kind: "action", dom: "button", k: "water_tank_draining", label: "act_drain", icon: "water" },
+  { tab: "controls", grp: "water", kind: "action", dom: "button", k: "empty_water_tank", label: "act_empty_tank", icon: "water" },
+
+  /* --- Controls: washing ------------------------------------------- */
+  { tab: "controls", grp: "wash", kind: "toggle", dom: "switch", k: "self_clean" },
+  { tab: "controls", grp: "wash", kind: "toggle", dom: "switch", k: "smart_mop_washing" },
+  { tab: "controls", grp: "wash", kind: "toggle", dom: "switch", k: "hot_washing" },
+  { tab: "controls", grp: "wash", kind: "toggle", dom: "switch", k: "ultra_clean_mode" },
+  { tab: "controls", grp: "wash", kind: "toggle", dom: "switch", k: "water_electrolysis" },
+  { tab: "controls", grp: "wash", kind: "toggle", dom: "switch", k: "self_clean_by_zone" },
+  { tab: "controls", grp: "wash", kind: "select", dom: "select", k: "washing_mode" },
+  { tab: "controls", grp: "wash", kind: "select", dom: "select", k: "mop_wash_level" },
+  { tab: "controls", grp: "wash", kind: "select", dom: "select", k: "mop_clean_frequency" },
+  { tab: "controls", grp: "wash", kind: "select", dom: "select", k: "self_clean_frequency" },
+  { tab: "controls", grp: "wash", kind: "select", dom: "select", k: "auto_rewashing" },
+  { tab: "controls", grp: "wash", kind: "select", dom: "select", k: "scraper_frequency" },
+  { tab: "controls", grp: "wash", kind: "number", dom: "number", k: "self_clean_area" },
+  { tab: "controls", grp: "wash", kind: "number", dom: "number", k: "self_clean_time" },
+  { tab: "controls", grp: "wash", kind: "number", dom: "number", k: "mop_cleaning_remainder" },
+
+  /* --- Controls: drying -------------------------------------------- */
+  { tab: "controls", grp: "dry", kind: "toggle", dom: "switch", k: "auto_drying" },
+  { tab: "controls", grp: "dry", kind: "toggle", dom: "switch", k: "smart_drying" },
+  { tab: "controls", grp: "dry", kind: "toggle", dom: "switch", k: "silent_drying" },
+  { tab: "controls", grp: "dry", kind: "toggle", dom: "switch", k: "dust_bag_drying" },
+  { tab: "controls", grp: "dry", kind: "select", dom: "select", k: "drying_time" },
+  { tab: "controls", grp: "dry", kind: "number", dom: "number", k: "drying_time" },
+
+  /* --- Controls: auto-empty ---------------------------------------- */
+  { tab: "controls", grp: "empty", kind: "toggle", dom: "switch", k: "auto_dust_collecting" },
+  { tab: "controls", grp: "empty", kind: "toggle", dom: "switch", k: "dnd_disable_auto_empty" },
+  { tab: "controls", grp: "empty", kind: "select", dom: "select", k: "auto_empty_mode" },
+  { tab: "controls", grp: "empty", kind: "select", dom: "select", k: "auto_empty_frequency" },
+  { tab: "controls", grp: "empty", kind: "number", dom: "number", k: "auto_empty_area" },
+
+  /* --- Controls: detergent ----------------------------------------- */
+  { tab: "controls", grp: "detergent", kind: "toggle", dom: "switch", k: "auto_add_detergent" },
+  { tab: "controls", grp: "detergent", kind: "toggle", dom: "switch", k: "mopping_with_detergent" },
+  { tab: "controls", grp: "detergent", kind: "toggle", dom: "switch", k: "mop_washing_with_detergent" },
+
+  /* --- Status ------------------------------------------------------- */
+  { tab: "status", kind: "stat", dom: "sensor", k: "self_wash_base_status" },
+  { tab: "status", kind: "bar", dom: "sensor", k: "drying_progress", label: "st_drying_progress" },
+  { tab: "status", kind: "stat", dom: "sensor", k: "drying_left", label: "st_drying_left" },
+  { tab: "status", kind: "stat", dom: "sensor", k: "auto_empty_status" },
+  { tab: "status", kind: "stat", dom: "sensor", k: "dust_collection" },
+  { tab: "status", kind: "stat", dom: "sensor", k: "dust_bag_drying_status" },
+  { tab: "status", kind: "stat", dom: "sensor", k: "dust_bag_drying_left", label: "st_bag_drying_left" },
+  { tab: "status", kind: "stat", dom: "sensor", k: "clean_water_tank_status" },
+  { tab: "status", kind: "stat", dom: "sensor", k: "dirty_water_tank_status" },
+  { tab: "status", kind: "stat", dom: "sensor", k: "dust_bag_status" },
+  { tab: "status", kind: "stat", dom: "sensor", k: "detergent_status" },
+  { tab: "status", kind: "stat", dom: "sensor", k: "hot_water_status" },
+  { tab: "status", kind: "stat", dom: "sensor", k: "station_drainage_status" },
+  { tab: "status", kind: "stat", dom: "sensor", k: "drainage_status" },
+  { tab: "status", kind: "stat", dom: "sensor", k: "water_tank" },
+  { tab: "status", kind: "stat", dom: "sensor", k: "mop_pad" },
+  { tab: "status", kind: "stat", dom: "sensor", k: "low_water_warning" },
+
+  /* --- Supplies: percentage left, each with its own reset ----------- */
+  { tab: "supplies", kind: "wear", dom: "sensor", k: "detergent_left", reset: "reset_detergent" },
+  { tab: "supplies", kind: "wear", dom: "sensor", k: "squeegee_left", reset: "reset_squeegee" },
+  { tab: "supplies", kind: "wear", dom: "sensor", k: "onboard_dirty_water_tank_left", reset: "reset_onboard_dirty_water_tank" },
+  /* Upstream's PROPERTY_TO_NAME spells this one with the enum still half in
+     caps, and strings.json declares the lower-case form, so the entity ends up
+     with no translation at all. Match the key the registry really carries, and
+     supply our own label rather than inherit the untranslated one. */
+  { tab: "supplies", kind: "wear", dom: "sensor", k: "DIRTY_WATER_CHANNEL_DIRTY_left", label: "st_channel_left", reset: "reset_dirty_water_channel" },
+  { tab: "supplies", kind: "wear", dom: "sensor", k: "deodorizer_left", reset: "reset_deodorizer" },
+  { tab: "supplies", kind: "wear", dom: "sensor", k: "scale_inhibitor_left", reset: "reset_scale_inhibitor" },
+];
+
+const DOCK_TABS = ["controls", "status", "supplies"];
+const DOCK_GROUPS = [
+  ["wash", "water"],
+  ["dry", "dry"],
+  ["empty", "bag"],
+  ["water", "water"],
+  ["detergent", "bottle"],
+];
 
 /* ------------------------------------------------------------------ *
  * 1. Backend enum maps (verified against dreame/types.py)
@@ -62,9 +176,33 @@ const FALLBACK = {
     all: "All",
     zones: "Zones",
     start_cleaning: "Start cleaning",
-    dock: "Dock",
+    dock: "Return to dock",
+    returning: "Stop returning",
     pause: "Pause",
     resume: "Resume",
+    dock_station: "Dock",
+    dock_tab_controls: "Controls",
+    dock_tab_status: "Status",
+    dock_tab_supplies: "Supplies",
+    dock_grp_wash: "Mop washing",
+    dock_grp_dry: "Drying",
+    dock_grp_empty: "Auto-empty",
+    dock_grp_water: "Water tank",
+    dock_grp_detergent: "Detergent",
+    dock_empty: "Your model does not report anything here",
+    act_wash_now: "Wash mop now",
+    act_dry_now: "Dry mop now",
+    act_dry_bag: "Dry dust bag",
+    act_empty_now: "Empty dust bin now",
+    act_drain: "Drain water",
+    act_empty_tank: "Empty water tank",
+    act_clean_station: "Clean the dock",
+    act_self_repair: "Self-repair",
+    st_drying_progress: "Drying progress",
+    st_drying_left: "Drying time left",
+    st_bag_drying_left: "Dust bag drying left",
+    st_channel_left: "Dirty water channel",
+    reset: "Reset",
     custom: "Custom",
     cleaning_settings: "Cleaning settings",
     close: "Close",
@@ -86,9 +224,33 @@ const FALLBACK = {
     all: "Tất cả",
     zones: "Khu vực",
     start_cleaning: "Bắt đầu làm sạch",
-    dock: "Đế sạc",
+    dock: "Về sạc",
+    returning: "Dừng về sạc",
     pause: "Tạm dừng",
     resume: "Tiếp tục",
+    dock_station: "Đế sạc",
+    dock_tab_controls: "Điều khiển",
+    dock_tab_status: "Trạng thái",
+    dock_tab_supplies: "Vật tư",
+    dock_grp_wash: "Giặt giẻ lau",
+    dock_grp_dry: "Sấy",
+    dock_grp_empty: "Tự hút bụi",
+    dock_grp_water: "Khay nước",
+    dock_grp_detergent: "Dung dịch",
+    dock_empty: "Máy của bạn không báo gì ở đây",
+    act_wash_now: "Giặt giẻ ngay",
+    act_dry_now: "Sấy giẻ ngay",
+    act_dry_bag: "Sấy túi bụi",
+    act_empty_now: "Hút bụi ngay",
+    act_drain: "Xả nước",
+    act_empty_tank: "Xả cạn khay nước",
+    act_clean_station: "Vệ sinh đế sạc",
+    act_self_repair: "Tự khắc phục",
+    st_drying_progress: "Tiến trình sấy",
+    st_drying_left: "Thời gian sấy còn lại",
+    st_bag_drying_left: "Sấy túi bụi còn lại",
+    st_channel_left: "Ống nước thải",
+    reset: "Đặt lại",
     custom: "Tùy chỉnh",
     cleaning_settings: "Cài đặt làm sạch",
     close: "Đóng",
@@ -582,6 +744,14 @@ class DreameSmartVacuumCard extends HTMLElement {
     out.cleangenius_mode = pick("select", "cleangenius_mode");
     out.customized = pick("switch", "customized_cleaning");
 
+    /* Dock rows, keyed "<domain>.<translation_key>" because a few keys exist on
+       two domains at once (`self_clean` is both a button and a switch). */
+    out.dock = {};
+    for (const row of DOCK_ROWS) {
+      const id = pick(row.dom, row.k);
+      if (id) out.dock[row.dom + "." + row.k] = id;
+    }
+
     out.camera =
       this._config.camera ||
       siblings.find(
@@ -627,6 +797,11 @@ class DreameSmartVacuumCard extends HTMLElement {
       ent && ent.cleangenius_mode,
       ent && ent.customized,
     ];
+    /* Only while the dock sheet is open: it is ~60 extra entities, and watching
+       them all the time would defeat the point of this early-out. */
+    if (this._sheet === "dock" && ent && ent.dock) {
+      for (const id of Object.values(ent.dock)) watch.push(id);
+    }
     const prev = this._watched;
     const next = watch.map((id) => (id ? hass.states[id] : undefined));
     /* Every visible string goes through hass.localize, and translations load
@@ -766,6 +941,9 @@ class DreameSmartVacuumCard extends HTMLElement {
             <span class="batt-shell"><span class="batt-fill"></span></span>
             <span class="batt-txt"></span>
           </div>
+          <button class="icon-btn station-btn" aria-haspopup="dialog" title="">
+            ${svg(ICON.station)}
+          </button>
         </div>
 
         <div class="stage">
@@ -802,7 +980,7 @@ class DreameSmartVacuumCard extends HTMLElement {
               <span class="act-txt"></span>
             </button>
             <span class="act-sep"></span>
-            <button class="act act-dock">
+            <button class="act act-return">
               ${svg(ICON.home, "act-ico")}
               <span class="act-txt"></span>
             </button>
@@ -837,8 +1015,10 @@ class DreameSmartVacuumCard extends HTMLElement {
       start: $(".act-start"),
       startTxt: $(".act-start .act-txt"),
       startIco: $(".act-start .act-ico path"),
-      dock: $(".act-dock"),
-      dockTxt: $(".act-dock .act-txt"),
+      ret: $(".act-return"),
+      retTxt: $(".act-return .act-txt"),
+      retIco: $(".act-return .act-ico path"),
+      station: $(".station-btn"),
       scrim: $(".scrim"),
       sheet: $(".sheet"),
       toast: $(".toast"),
@@ -849,7 +1029,8 @@ class DreameSmartVacuumCard extends HTMLElement {
     );
     this._el.chip.addEventListener("click", () => this._openSheet("settings"));
     this._el.start.addEventListener("click", () => this._onStart());
-    this._el.dock.addEventListener("click", () => this._onDock());
+    this._el.ret.addEventListener("click", () => this._onReturn());
+    this._el.station.addEventListener("click", () => this._openSheet("dock"));
     this._el.scrim.addEventListener("click", () => this._closeSheet());
     this._el.mapSwitch.addEventListener("click", () => this._cycleMap());
 
@@ -941,6 +1122,7 @@ class DreameSmartVacuumCard extends HTMLElement {
 
     if (this._sheet === "settings") this._renderSettingsSheet();
     else if (this._sheet === "room") this._renderRoomSheet();
+    else if (this._sheet === "dock") this._renderDockSheet();
   }
 
   _setText(node, text) {
@@ -1391,7 +1573,23 @@ class DreameSmartVacuumCard extends HTMLElement {
     if (this._el.startIco.getAttribute("d") !== icon) {
       this._el.startIco.setAttribute("d", icon);
     }
-    this._setText(this._el.dockTxt, this._t("dock"));
+    /* The old button was a static noun ("Dock") that never disabled, so it read
+       as "dock settings" and invited a pointless tap while already parked. Say
+       what it does, and say nothing when there is nothing to do. */
+    const returning = vac.state === "returning";
+    this._setText(this._el.retTxt, this._t(returning ? "returning" : "dock"));
+    const retIcon = returning ? ICON.pause : ICON.home;
+    if (this._el.retIco.getAttribute("d") !== retIcon) {
+      this._el.retIco.setAttribute("d", retIcon);
+    }
+    this._el.ret.toggleAttribute(
+      "disabled",
+      this._busy || this._isDocked(vac, attrs)
+    );
+
+    /* Label via title/aria only - the button's content is an inline svg. */
+    this._el.station.title = this._t("dock_station");
+    this._el.station.setAttribute("aria-label", this._t("dock_station"));
 
     const blocked =
       this._busy ||
@@ -1417,6 +1615,17 @@ class DreameSmartVacuumCard extends HTMLElement {
 
   _isPaused(vac, attrs) {
     return vac.state === "paused" || !!(attrs && attrs.paused === true);
+  }
+
+  /* Parked on the dock with nothing to return from. `docked` covers charging and
+     fully charged; the base-station statuses mean it is physically on the dock
+     doing something, which is equally not a return-to-base candidate. */
+  _isDocked(vac, attrs) {
+    if (!vac) return true;
+    if (vac.state === "docked") return true;
+    if (attrs && attrs.washing === true) return true;
+    if (attrs && attrs.drying === true) return true;
+    return false;
   }
 
   /* A chip per room, in map order, showing its queue position when selected.
@@ -1810,6 +2019,7 @@ class DreameSmartVacuumCard extends HTMLElement {
     this._el.scrim.classList.add("open");
     this._el.sheet.classList.add("open");
     if (kind === "settings") this._renderSettingsSheet();
+    else if (kind === "dock") this._renderDockSheet();
     this._el.sheet.focus();
   }
 
@@ -1980,6 +2190,309 @@ class DreameSmartVacuumCard extends HTMLElement {
           })
         );
       }
+    }
+
+    sheet.scrollTop = scroll;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 5e-bis. Dock sheet
+   *
+   * Rows come from DOCK_ROWS, and a row is rendered only if its entity actually
+   * resolved. That is the whole capability story: the integration decides what
+   * exists for this model, the sheet just shows what it finds.
+   * ------------------------------------------------------------------ */
+
+  /* Name for a dock row: an explicit card string when the row declares one
+     (several sensors ship no translation and would render as "Drying Left"),
+     otherwise the entity's own translated name. */
+  _dockLabel(row, st) {
+    if (row.label) return this._t(row.label);
+    const fn = st && st.attributes && st.attributes.friendly_name;
+    if (!fn) return row.k.replace(/_/g, " ");
+    /* has_entity_name makes friendly_name "<device> <entity>", and repeating the
+       device name on every row of the sheet is just noise. */
+    const vac = this._st(this._config.entity);
+    const device =
+      (vac && vac.attributes && vac.attributes.friendly_name) ||
+      this._config.name;
+    if (device && fn.length > device.length && fn.startsWith(device)) {
+      return fn.slice(device.length).trim() || fn;
+    }
+    return fn;
+  }
+
+  _dockRowShell(label, extraClass) {
+    const el = document.createElement("div");
+    el.className = "drow" + (extraClass ? " " + extraClass : "");
+    el.innerHTML = `<span class="drow-lbl"></span><span class="drow-val"></span>`;
+    el.querySelector(".drow-lbl").textContent = label;
+    return el;
+  }
+
+  /* Read-only value. Sensor states get run through the entity's own state
+     translations so "washing" shows as "Đang giặt", not the raw enum. */
+  _dockStat(row, id) {
+    const st = this._st(id);
+    if (!st) return null;
+    const el = this._dockRowShell(this._dockLabel(row, st));
+    let text;
+    if (this._hass.formatEntityState) {
+      text = this._hass.formatEntityState(st);
+    } else {
+      text =
+        this._tState(row.dom, row.k, st.state) ||
+        st.state + (st.attributes.unit_of_measurement || "");
+    }
+    el.querySelector(".drow-val").textContent = text;
+    return el;
+  }
+
+  _dockBar(row, id) {
+    const st = this._st(id);
+    if (!st) return null;
+    const pct = clamp(Number(st.state), 0, 100);
+    if (!Number.isFinite(pct)) return this._dockStat(row, id);
+    const el = this._dockRowShell(this._dockLabel(row, st), "drow-bar");
+    el.querySelector(".drow-val").textContent = pct + "%";
+    const bar = document.createElement("span");
+    bar.className = "dbar";
+    bar.innerHTML = `<span class="dbar-fill"></span>`;
+    bar.querySelector(".dbar-fill").style.width = pct + "%";
+    el.appendChild(bar);
+    return el;
+  }
+
+  /* Percentage-left plus its reset button. Rendered even when the reset button
+     is missing, because the wear figure is useful on its own. */
+  _dockWear(row, id, ent) {
+    const st = this._st(id);
+    if (!st) return null;
+    const pct = Number(st.state);
+    const el = this._dockRowShell(this._dockLabel(row, st), "drow-bar");
+    el.querySelector(".drow-val").textContent = Number.isFinite(pct)
+      ? pct + "%"
+      : st.state;
+    if (Number.isFinite(pct)) {
+      const bar = document.createElement("span");
+      bar.className = "dbar" + (pct <= 10 ? " low" : "");
+      bar.innerHTML = `<span class="dbar-fill"></span>`;
+      bar.querySelector(".dbar-fill").style.width = clamp(pct, 0, 100) + "%";
+      el.appendChild(bar);
+    }
+    const resetId = row.reset && ent.dock["button." + row.reset];
+    if (resetId) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "dbtn dbtn-quiet";
+      b.textContent = this._t("reset");
+      b.addEventListener("click", () => this._dockPress(resetId));
+      el.appendChild(b);
+    }
+    return el;
+  }
+
+  _dockToggle(row, id) {
+    const st = this._st(id);
+    if (!st || st.state === "unavailable") return null;
+    const on = st.state === "on";
+    const el = this._dockRowShell(this._dockLabel(row, st));
+    const sw = document.createElement("button");
+    sw.type = "button";
+    sw.className = "dsw" + (on ? " on" : "");
+    sw.setAttribute("role", "switch");
+    sw.setAttribute("aria-checked", on ? "true" : "false");
+    sw.innerHTML = `<span class="dsw-knob"></span>`;
+    sw.addEventListener("click", () => {
+      this._call("switch", on ? "turn_off" : "turn_on", { entity_id: id });
+    });
+    el.querySelector(".drow-val").replaceWith(sw);
+    return el;
+  }
+
+  /* Selects reuse the segmented picker the cleaning sheet already uses, so the
+     two sheets do not end up looking like different apps. */
+  _dockSelect(row, id) {
+    const st = this._st(id);
+    if (!st || st.state === "unavailable") return null;
+    const options = this._optionsFor(id, {});
+    if (!options.length) return null;
+    const opts = options.map((v) => ({
+      value: v,
+      label: this._tState("select", row.k, v) || String(v),
+    }));
+    return this._group(
+      this._dockLabel(row, st),
+      ICON[row.icon] || ICON.autofix,
+      opts,
+      st.state,
+      (v) => this._selectOption(id, v)
+    );
+  }
+
+  /* Stepper rather than a slider: these are all coarse values (minutes, m2) and
+     a drag target is awkward inside a scrolling sheet. */
+  _dockNumber(row, id) {
+    const st = this._st(id);
+    if (!st || st.state === "unavailable") return null;
+    const cur = Number(st.state);
+    if (!Number.isFinite(cur)) return null;
+    const a = st.attributes || {};
+    const step = Number(a.step) || 1;
+    const min = a.min != null ? Number(a.min) : 0;
+    const max = a.max != null ? Number(a.max) : 100;
+    const unit = a.unit_of_measurement ? " " + a.unit_of_measurement : "";
+
+    const el = this._dockRowShell(this._dockLabel(row, st), "drow-step");
+    const wrap = document.createElement("span");
+    wrap.className = "dstep";
+    const mk = (icon, delta) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "dbtn dbtn-step";
+      b.innerHTML = svg(icon);
+      const next = clamp(cur + delta, min, max);
+      b.toggleAttribute("disabled", next === cur);
+      b.addEventListener("click", () =>
+        this._call("number", "set_value", { entity_id: id, value: next })
+      );
+      return b;
+    };
+    const val = document.createElement("span");
+    val.className = "dstep-val";
+    val.textContent = cur + unit;
+    wrap.appendChild(mk(ICON.minus, -step));
+    wrap.appendChild(val);
+    wrap.appendChild(mk(ICON.plus, step));
+    el.querySelector(".drow-val").replaceWith(wrap);
+    return el;
+  }
+
+  _dockAction(row, id) {
+    const st = this._st(id);
+    if (!st || st.state === "unavailable") return null;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "dbtn dbtn-act";
+    b.innerHTML = svg(ICON[row.icon] || ICON.autorenew, "dbtn-ico");
+    const span = document.createElement("span");
+    span.textContent = this._t(row.label);
+    b.appendChild(span);
+    b.addEventListener("click", () => this._dockPress(id));
+    return b;
+  }
+
+  async _dockPress(id) {
+    try {
+      await this._call("button", "press", { entity_id: id });
+    } catch (err) {
+      this._toast(err.message || String(err));
+    }
+  }
+
+  _renderDockSheet() {
+    const ent = this._resolveEntities();
+    const dock = (ent && ent.dock) || {};
+    const sheet = this._el.sheet;
+    const scroll = sheet.scrollTop;
+    const tab = this._dockTab || "controls";
+
+    sheet.innerHTML = `
+      <div class="grab"></div>
+      <div class="sheet-hd">
+        <span></span>
+        <button class="icon-btn sheet-close">${svg(ICON.close)}</button>
+      </div>
+      <div class="tabs dock-tabs" role="tablist"></div>
+      <div class="sheet-body dock-body"></div>`;
+    sheet.querySelector(".sheet-hd span").textContent = this._t("dock_station");
+    sheet
+      .querySelector(".sheet-close")
+      .addEventListener("click", () => this._closeSheet());
+
+    const tabsEl = sheet.querySelector(".dock-tabs");
+    DOCK_TABS.forEach((name) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "tab" + (name === tab ? " on" : "");
+      b.setAttribute("role", "tab");
+      b.setAttribute("aria-selected", name === tab ? "true" : "false");
+      b.textContent = this._t("dock_tab_" + name);
+      b.addEventListener("click", () => {
+        this._dockTab = name;
+        this._renderDockSheet();
+      });
+      tabsEl.appendChild(b);
+    });
+
+    const body = sheet.querySelector(".dock-body");
+    const rowsFor = (name) => DOCK_ROWS.filter((r) => r.tab === name);
+
+    const build = (row) => {
+      const id = dock[row.dom + "." + row.k];
+      if (!id) return null;
+      switch (row.kind) {
+        case "action":
+          return this._dockAction(row, id);
+        case "toggle":
+          return this._dockToggle(row, id);
+        case "select":
+          return this._dockSelect(row, id);
+        case "number":
+          return this._dockNumber(row, id);
+        case "bar":
+          return this._dockBar(row, id);
+        case "wear":
+          return this._dockWear(row, id, ent);
+        default:
+          return this._dockStat(row, id);
+      }
+    };
+
+    let painted = 0;
+    if (tab === "controls") {
+      /* Actions first inside each group, then its settings - "do it now" is the
+         reason people open this sheet, the knobs are the rarer visit. */
+      for (const [grp, icon] of DOCK_GROUPS) {
+        const rows = rowsFor("controls").filter((r) => r.grp === grp);
+        const acts = [];
+        const rest = [];
+        for (const row of rows) {
+          const node = build(row);
+          if (!node) continue;
+          (row.kind === "action" ? acts : rest).push(node);
+        }
+        if (!acts.length && !rest.length) continue;
+        const hd = document.createElement("div");
+        hd.className = "dgrp-hd";
+        hd.innerHTML = svg(ICON[icon] || ICON.autofix, "grp-ico");
+        const t = document.createElement("span");
+        t.textContent = this._t("dock_grp_" + grp);
+        hd.appendChild(t);
+        body.appendChild(hd);
+        if (acts.length) {
+          const strip = document.createElement("div");
+          strip.className = "dacts";
+          acts.forEach((n) => strip.appendChild(n));
+          body.appendChild(strip);
+        }
+        rest.forEach((n) => body.appendChild(n));
+        painted += acts.length + rest.length;
+      }
+    } else {
+      for (const row of rowsFor(tab)) {
+        const node = build(row);
+        if (!node) continue;
+        body.appendChild(node);
+        painted++;
+      }
+    }
+
+    if (!painted) {
+      const empty = document.createElement("div");
+      empty.className = "dempty";
+      empty.textContent = this._t("dock_empty");
+      body.appendChild(empty);
     }
 
     sheet.scrollTop = scroll;
@@ -2157,9 +2670,13 @@ class DreameSmartVacuumCard extends HTMLElement {
     );
   }
 
-  async _onDock() {
+  /* Sends the robot home, or aborts the trip if it is already on its way. There
+     is no "cancel return" service, so pause is what stops it mid-return. */
+  async _onReturn() {
+    const vac = this._st(this._config.entity);
+    const returning = vac && vac.state === "returning";
     try {
-      await this._call("vacuum", "return_to_base");
+      await this._call("vacuum", returning ? "pause" : "return_to_base");
     } catch (err) {
       this._toast(err.message || String(err));
     }
@@ -2542,7 +3059,7 @@ const STYLES = `
 .act[disabled] { opacity: .38; cursor: default; }
 .act-ico { width: 22px; height: 22px; flex: none; }
 .act-start .act-ico { fill: var(--dv-warm); }
-.act-dock .act-ico { fill: var(--dv-accent); }
+.act-return .act-ico { fill: var(--dv-accent); }
 .act-sep { width: 1px; background: var(--dv-line); margin: 12px 0; flex: none; }
 .act-txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -2598,6 +3115,89 @@ const STYLES = `
   background: color-mix(in srgb, var(--dv-accent) 12%, transparent);
   font-weight: 600;
 }
+/* ---------- dock sheet ---------- */
+.station-btn { flex: none; color: var(--dv-dim); }
+.station-btn:hover { color: var(--dv-accent); }
+/* The main tab strip animates a .tab-ind pill; these tabs are rebuilt on every
+   render so they paint the selected state directly instead. */
+.dock-tabs { margin: 2px 12px 4px; }
+.dock-tabs .tab.on {
+  background: var(--dv-surface);
+  box-shadow: 0 1px 4px rgba(0,0,0,.14);
+}
+.dock-body { padding-bottom: 22px; }
+.dgrp-hd {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .8rem; color: var(--dv-dim);
+  margin: 18px 0 8px;
+}
+.dgrp-hd:first-child { margin-top: 6px; }
+
+/* action strip: wrapping pills, so a base with one action does not stretch it */
+.dacts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+.dbtn {
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 1.5px solid var(--dv-line); background: var(--dv-surface);
+  color: var(--dv-text); border-radius: 12px; padding: 9px 13px;
+  min-height: 40px; cursor: pointer; font: inherit; font-size: .83rem;
+  transition: border-color .15s ease, background .15s ease;
+}
+.dbtn:hover:not([disabled]) { border-color: var(--dv-accent); }
+.dbtn[disabled] { opacity: .38; cursor: default; }
+.dbtn:focus-visible { outline: 2px solid var(--dv-accent); outline-offset: 2px; }
+.dbtn-ico { width: 18px; height: 18px; fill: var(--dv-accent); flex: none; }
+.dbtn-quiet {
+  padding: 5px 10px; min-height: 30px; font-size: .76rem;
+  color: var(--dv-dim); flex: none;
+}
+.dbtn-step {
+  width: 32px; height: 32px; min-height: 32px; padding: 0;
+  justify-content: center; border-radius: 10px;
+}
+.dbtn-step svg { width: 16px; height: 16px; fill: currentColor; }
+
+/* one label + one value per line; the bar and the reset button wrap under it */
+.drow {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 0; border-bottom: 1px solid var(--dv-line);
+  font-size: .85rem; color: var(--dv-text);
+}
+.drow:last-child { border-bottom: 0; }
+.drow-lbl { flex: 1; min-width: 0; }
+.drow-val { color: var(--dv-dim); text-align: right; flex: none; }
+.drow-bar { flex-wrap: wrap; }
+.dbar {
+  flex: 1 0 100%; height: 5px; border-radius: 3px;
+  background: var(--dv-sunken); overflow: hidden;
+}
+.dbar-fill { display: block; height: 100%; background: var(--dv-accent); }
+.dbar.low .dbar-fill { background: #e5533d; }
+.dstep { display: inline-flex; align-items: center; gap: 8px; flex: none; }
+.dstep-val {
+  min-width: 62px; text-align: center; color: var(--dv-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* switch: a plain button, so it needs no ha-switch dependency */
+.dsw {
+  flex: none; width: 42px; height: 25px; border-radius: 13px; border: 0;
+  background: var(--dv-sunken); cursor: pointer; padding: 0;
+  position: relative; transition: background .18s ease;
+}
+.dsw.on { background: var(--dv-accent); }
+.dsw:focus-visible { outline: 2px solid var(--dv-accent); outline-offset: 2px; }
+.dsw-knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 19px; height: 19px; border-radius: 50%;
+  background: #fff; transition: transform .18s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,.3);
+}
+.dsw.on .dsw-knob { transform: translateX(17px); }
+.dempty {
+  padding: 26px 4px; text-align: center;
+  color: var(--dv-dim); font-size: .85rem;
+}
+
 .sheet-ft { display: flex; gap: 10px; padding: 0 16px 18px; }
 .btn {
   flex: 1; border-radius: 14px; padding: 12px; border: 0; cursor: pointer;

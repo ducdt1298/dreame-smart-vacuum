@@ -1613,7 +1613,8 @@
         "virtual_wall": "Væg",
         "wash": "Vask",
         "washing_unavailable": "Vask utilgængelig",
-        "wifi_map": "WiFi-kort"
+        "wifi_map": "WiFi-kort",
+        "dock_station": "Dok"
       }
     },
     "frontend_config": {
