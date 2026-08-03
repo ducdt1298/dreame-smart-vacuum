@@ -1,5 +1,5 @@
 #!/bin/bash
-# wget -O - https://raw.githubusercontent.com/Tasshack/dreame-vacuum/dev/install | bash -
+# wget -O - https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/install | bash -
 set -e
 
 declare path
@@ -27,13 +27,13 @@ if [ -n "$path" ]; then
         mkdir "$path/custom_components"
     fi
     cd "$path/custom_components"
-    wget "https://github.com/Tasshack/dreame-vacuum/releases/download/v2.0.0b25/dreame_vacuum.zip"
-    if [ -d "$path/custom_components/dreame_vacuum" ]; then
-        rm -R "$path/custom_components/dreame_vacuum"
+    wget "https://github.com/ducdt1298/dreame-vacuum/releases/download/v2.0.0b25/dreame_smart_vacuum.zip"
+    if [ -d "$path/custom_components/dreame_smart_vacuum" ]; then
+        rm -R "$path/custom_components/dreame_smart_vacuum"
     fi
-    mkdir "$path/custom_components/dreame_vacuum"
-    unzip "$path/custom_components/dreame_vacuum.zip" -d "$path/custom_components/dreame_vacuum" >/dev/null 2>&1
-    rm "$path/custom_components/dreame_vacuum.zip"
+    mkdir "$path/custom_components/dreame_smart_vacuum"
+    unzip "$path/custom_components/dreame_smart_vacuum.zip" -d "$path/custom_components/dreame_smart_vacuum" >/dev/null 2>&1
+    rm "$path/custom_components/dreame_smart_vacuum.zip"
     echo
     echo "Installation complete"
     echo "You need to restart Home Assistant before using the integration."

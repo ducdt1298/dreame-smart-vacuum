@@ -1,5 +1,5 @@
 /*
- * Headless tests for the pure logic inside dreame-vacuum-card.js: the
+ * Headless tests for the pure logic inside dreame-smart-vacuum-card.js: the
  * vacuum <-> image coordinate transform, the RLE room-mask decoder, room
  * hit testing and outline tracing.
  *
@@ -18,9 +18,9 @@ const SRC = fs.readFileSync(
     __dirname,
     "..",
     "custom_components",
-    "dreame_vacuum",
+    "dreame_smart_vacuum",
     "frontend",
-    "dreame-vacuum-card.js"
+    "dreame-smart-vacuum-card.js"
   ),
   "utf8"
 );
@@ -55,7 +55,7 @@ const factory = new Function(
   "window",
   "document",
   "console",
-  SRC + "\nreturn { Calibration, RoomGeometry, DreameVacuumCard, SUCTION, WATER, HUMID, MODE };"
+  SRC + "\nreturn { Calibration, RoomGeometry, DreameSmartVacuumCard, SUCTION, WATER, HUMID, MODE };"
 );
 
 const M = factory(
@@ -326,7 +326,7 @@ ok(
 console.log("\n[Cleaning sequence]");
 
 function cardWith(rooms, selection) {
-  const c = Object.create(M.DreameVacuumCard.prototype);
+  const c = Object.create(M.DreameSmartVacuumCard.prototype);
   c._selection = selection.slice();
   c._rooms = () => rooms;
   return c;
@@ -379,7 +379,7 @@ ok("no rooms -> empty sequence", cardWith({}, [])._fullSequence().length === 0);
 console.log("\n[Zone minimum size]");
 
 function zoneCard(grid, calib) {
-  const c = Object.create(M.DreameVacuumCard.prototype);
+  const c = Object.create(M.DreameSmartVacuumCard.prototype);
   c._calib = calib;
   c._geo = { grid };
   c._zones = [];
@@ -444,7 +444,7 @@ ok("no zones without a usable calibration", z._zones.length === 0);
  * ---------------------------------------------------------------- */
 console.log("\n[Wet control]");
 
-const wetCard = Object.create(M.DreameVacuumCard.prototype);
+const wetCard = Object.create(M.DreameSmartVacuumCard.prototype);
 const selWet = { id: "select.x", key: "mop_pad_humidity", map: M.HUMID, kind: "select" };
 const numWet = { id: "number.x", key: "wetness_level", map: null, kind: "number" };
 

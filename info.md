@@ -1,44 +1,43 @@
-[![Version](https://img.shields.io/github/manifest-json/v/Tasshack/dreame-vacuum/dev?filename=custom_components%2Fdreame_vacuum%2Fmanifest.json&color=slateblue&label=Version&style=for-the-badge)](https://github.com/Tasshack/dreame-vacuum/releases)
-![Downloads](https://img.shields.io/github/downloads/Tasshack/dreame-vacuum/total?label=Downloads&style=for-the-badge)
-![Stars](https://img.shields.io/github/stars/Tasshack/dreame-vacuum?label=Stars&color=darkgoldenrod&style=for-the-badge)
-[![HACS](https://img.shields.io/badge/HACS-Default-orange.svg?logo=HomeAssistantCommunityStore&logoColor=white&style=for-the-badge)](https://github.com/hacs/integration)
-[![Community Forum](https://img.shields.io/static/v1.svg?label=Community&message=Forum&color=41bdf5&logo=HomeAssistant&logoColor=white&style=for-the-badge)](https://community.home-assistant.io/t/custom-component-dreame-vacuum/473026)
-[![Ko-Fi](https://img.shields.io/static/v1.svg?label=%20&message=Ko-Fi&color=F16061&logo=ko-fi&logoColor=white&style=for-the-badge)](https://www.ko-fi.com/Tasshack)
-[![PayPal.Me](https://img.shields.io/static/v1.svg?label=%20&message=PayPal.Me&logo=paypal&color=blue&style=for-the-badge)](https://paypal.me/Tasshackk)
+[![Version](https://img.shields.io/github/manifest-json/v/ducdt1298/dreame-vacuum/main?filename=custom_components%2Fdreame_smart_vacuum%2Fmanifest.json&color=slateblue&label=Version&style=for-the-badge)](https://github.com/ducdt1298/dreame-vacuum/releases)
+![Downloads](https://img.shields.io/github/downloads/ducdt1298/dreame-vacuum/total?label=Downloads&style=for-the-badge)
+![Stars](https://img.shields.io/github/stars/ducdt1298/dreame-vacuum?label=Stars&color=darkgoldenrod&style=for-the-badge)
+[![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg?logo=HomeAssistantCommunityStore&logoColor=white&style=for-the-badge)](https://github.com/hacs/integration)
 
-# Dreame vacuum integration for Home Assistant
+![Logo](https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/logo.png)
+
+# Dreame Smart Vacuum integration for Home Assistant
 
 Complete app replacement with Home Assistant for Dreame robot vacuums.
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/Tasshack/dreame-vacuum/master/docs/media/map.png" width="20%"><img src="https://raw.githubusercontent.com/Tasshack/dreame-vacuum/master/docs/media/map_app.png" width="20%"><img width=8%><img src="https://raw.githubusercontent.com/Tasshack/dreame-vacuum/master/docs/media/settings.png" width="20%"><img src="https://raw.githubusercontent.com/Tasshack/dreame-vacuum/master/docs/media/settings_app.png" width="20%">
+    <img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/map.png" width="20%"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/map_app.png" width="20%"><img width=8%><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/settings.png" width="20%"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/settings_app.png" width="20%">
 </p>
 
 ## Features
 
-- [Supported devices](https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/supported_devices.md)
-- [Auto generated device entities](https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/entities.md)
-- [Live and multi floor map support](https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/map.md)
-- [Map obstacle photos](https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/map.md#obstacle-photos)
-- [Cleaning and cruising history maps](https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/map.md#cleaning-and-cruising-history-maps)
-- [Cloud and local map backup/recovery](https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/map.md#backup-and-recovery)
-- [Saved WiFi maps](https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/map.md#wifi-map)
-- [Customized room cleaning entities](https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/room_entities.md)
-- [Services for device and map with examples](https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/services.md)
-- [Persistent notifications and error reporting](https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/notifications.md)
-- [Events for automations](https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/events.md)
+- [Supported devices](https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/supported_devices.md)
+- [Auto generated device entities](https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/entities.md)
+- [Live and multi floor map support](https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/map.md)
+- [Map obstacle photos](https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/map.md#obstacle-photos)
+- [Cleaning and cruising history maps](https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/map.md#cleaning-and-cruising-history-maps)
+- [Cloud and local map backup/recovery](https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/map.md#backup-and-recovery)
+- [Saved WiFi maps](https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/map.md#wifi-map)
+- [Customized room cleaning entities](https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/room_entities.md)
+- [Services for device and map with examples](https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/services.md)
+- [Persistent notifications and error reporting](https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/notifications.md)
+- [Events for automations](https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/events.md)
 - Dreamehome account support
 - Movahome account support
 
 
 ## Configuration
 
-<a href="https://my.home-assistant.io/redirect/config_flow_start/?domain=dreame_vacuum" target="_blank"><img src="https://my.home-assistant.io/badges/config_flow_start.svg" alt="Open your Home Assistant instance and start setting up a new integration." /></a>
+<a href="https://my.home-assistant.io/redirect/config_flow_start/?domain=dreame_smart_vacuum" target="_blank"><img src="https://my.home-assistant.io/badges/config_flow_start.svg" alt="Open your Home Assistant instance and start setting up a new integration." /></a>
 - Select configuration type:
 
     TODO
 
-    <a href="https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/map.md" target="_blank">About map feature</a>
+    <a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/map.md" target="_blank">About map feature</a>
 
 - Enter required credentials according to the selected configuration type. 
   > Please make sure that the devices are at same subnet for both configuration types. <a href="https://python-miio.readthedocs.io/en/latest/troubleshooting.html#discover-devices-across-subnets" target="_blank">python-miio article about this issue.</a>
@@ -46,10 +45,10 @@ Complete app replacement with Home Assistant for Dreame robot vacuums.
 
     TODO
 
-    <a href="https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/notifications.md" target="_blank">About notifications feature</a><br><a href="https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/map.md#color-schemes" target="_blank">About map color schemes</a>
+    <a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/notifications.md" target="_blank">About notifications feature</a><br><a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/map.md#color-schemes" target="_blank">About map color schemes</a>
 - Navigate to device page for disabling or enabling entities that you want to use.
 
-    <a href="https://github.com/Tasshack/dreame-vacuum/blob/dev/docs/entities.md" target="_blank">About entities</a>
+    <a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/entities.md" target="_blank">About entities</a>
 
 
 ## How To Use
@@ -78,7 +77,7 @@ map_modes:
     repeats_type: EXTERNAL
     max_repeats: 3
     service_call_schema:
-      service: dreame_vacuum.vacuum_clean_zone
+      service: dreame_smart_vacuum.vacuum_clean_zone
       service_data:
         entity_id: '[[entity_id]]'
         zone: '[[selection]]'
@@ -87,7 +86,7 @@ map_modes:
     repeats_type: EXTERNAL
     max_repeats: 3
     service_call_schema:
-      service: dreame_vacuum.vacuum_clean_segment
+      service: dreame_smart_vacuum.vacuum_clean_segment
       service_data:
         entity_id: '[[entity_id]]'
         segments: '[[selection]]'
@@ -112,7 +111,7 @@ map_modes:
     selection_type: MANUAL_POINT
     repeats_type: EXTERNAL
     service_call_schema:
-      service: dreame_vacuum.vacuum_clean_spot
+      service: dreame_smart_vacuum.vacuum_clean_spot
       service_data:
         entity_id: '[[entity_id]]'
         points: '[[selection]]'
@@ -149,19 +148,19 @@ stats:
       subtitle: Cleaning time
 shortcuts:
   - name: Clean Room 1
-    service: dreame_vacuum.vacuum_clean_segment
+    service: dreame_smart_vacuum.vacuum_clean_segment
     service_data:
       entity_id: # Your vacuum entity
       segments: 1
     icon: mdi:sofa
   - name: Clean Room 2
-    service: dreame_vacuum.vacuum_clean_segment
+    service: dreame_smart_vacuum.vacuum_clean_segment
     service_data:
       entity_id: # Your vacuum entity
       segments: 2
     icon: mdi:bed-empty
   - name: Clean Room 3
-    service: dreame_vacuum.vacuum_clean_segment
+    service: dreame_smart_vacuum.vacuum_clean_segment
     service_data:
       entity_id: # Your vacuum entity
       segments: 3
@@ -242,7 +241,7 @@ attributes:
 
 ```
 
-#### With Dreame Vacuum Card
+#### With Dreame Smart Vacuum Card
 
 *Work in progress*
 
@@ -255,10 +254,8 @@ attributes:
  - Dreame cloud authentication by [@kuudori](https://github.com/kuudori)
  - Mova cloud help by [@r1si](https://github.com/r1si)
 
- ## Do not forget to support the project!
+## Credits
 
-<a href="https://ko-fi.com/tasshack"><img width="300" src="https://raw.githubusercontent.com/Tasshack/dreame-vacuum/refs/heads/dev/.github/icons/kofi.png"/></a>
-
-<a href="https://paypal.me/tasshackK"><img width="300" src="https://raw.githubusercontent.com/Tasshack/dreame-vacuum/refs/heads/dev/.github/icons/paypal.png"></a>
-
-<a href="https://github.com/sponsors/Tasshack"><img width="300" src="https://raw.githubusercontent.com/Tasshack/dreame-vacuum/refs/heads/dev/.github/icons/github.png"></a>
+**Dreame Smart Vacuum** is a fork of [dreame-vacuum](https://github.com/Tasshack/dreame-vacuum) by
+[@Tasshack](https://github.com/Tasshack), released under the MIT license. All upstream work and
+copyright remain with the original author.

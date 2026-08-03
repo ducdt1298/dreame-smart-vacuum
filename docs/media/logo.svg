@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 90" width="480" height="90" role="img" aria-label="Dreame Smart Vacuum">
+  <title>Dreame Smart Vacuum</title>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2576eb"/>
+      <stop offset="1" stop-color="#1ac7b2"/>
+    </linearGradient>
+  </defs>
+
+  <!-- icon tile -->
+  <rect x="8" y="8" width="74" height="74" rx="20" fill="url(#tile)"/>
+
+  <!-- robot vacuum, seen from above: body, lidar turret, brush bar -->
+  <g fill="#fff">
+    <circle cx="45" cy="45" r="22" fill="none" stroke="#fff" stroke-width="4.5"/>
+    <circle cx="45" cy="35" r="5.6"/>
+    <rect x="32.5" y="50" width="25" height="5" rx="2.5"/>
+    <!-- "smart" sparkle -->
+    <polygon points="64,17 65.96,22.04 71,24 65.96,25.96 64,31 62.04,25.96 57,24 62.04,22.04"/>
+  </g>
+
+  <!-- wordmark -->
+  <text x="100" y="47" font-family="Arial, Helvetica, sans-serif" font-weight="bold"
+        font-size="33" fill="#2b6cd6">DREAME</text>
+  <text x="100.5" y="69" font-family="Arial, Helvetica, sans-serif" font-weight="bold"
+        font-size="13" letter-spacing="3.6" fill="#7a8ca8">SMART VACUUM</text>
+</svg>

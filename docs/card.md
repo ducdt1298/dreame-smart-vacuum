@@ -1,4 +1,4 @@
-# Dreame Vacuum Card
+# Dreame Smart Vacuum Card
 
 A Lovelace card that mirrors the official Dreame app for the thing you actually do every
 day: pick where to clean, and press start.
@@ -8,7 +8,7 @@ cleaning-order badges, per-room suction/water chips. This card supplies the chro
 it: a quiet header, an interactive room picker, and a cleaning-settings sheet.
 
 ```yaml
-type: custom:dreame-vacuum-card
+type: custom:dreame-smart-vacuum-card
 entity: vacuum.mo
 ```
 
@@ -72,8 +72,8 @@ Getting this to actually happen on the robot takes two calls, because the order 
 the segment-cleaning payload is pinned to `1` on every device with the
 `customized_cleaning` capability:
 
-1. `dreame_vacuum.vacuum_set_cleaning_sequence` commits the order to the map.
-2. `dreame_vacuum.vacuum_clean_segment` starts the job.
+1. `dreame_smart_vacuum.vacuum_set_cleaning_sequence` commits the order to the map.
+2. `dreame_smart_vacuum.vacuum_clean_segment` starts the job.
 
 **The sequence call is a whole-map write, not a partial one.** The integration gives every
 segment missing from the list order `0` (v1 maps) or pushes it to the tail (v2), and persists
@@ -114,7 +114,7 @@ Suction is hidden in mop-only mode, and humidity is hidden in sweep-only mode.
 ### Per-room settings
 
 **Long-press a room** on the map to set that room's suction, humidity and repeats
-persistently, via `dreame_vacuum.vacuum_set_custom_cleaning`. The map renderer then draws
+persistently, via `dreame_smart_vacuum.vacuum_set_custom_cleaning`. The map renderer then draws
 those values as chips on the room, again like the app.
 
 ## Behaviour notes
@@ -140,7 +140,7 @@ those values as chips on the room, again like the app.
 ## Example: full-width dashboard card
 
 ```yaml
-type: custom:dreame-vacuum-card
+type: custom:dreame-smart-vacuum-card
 entity: vacuum.mo
 map_height: 420
 ```
@@ -148,7 +148,7 @@ map_height: 420
 ## Example: compact, no map
 
 ```yaml
-type: custom:dreame-vacuum-card
+type: custom:dreame-smart-vacuum-card
 entity: vacuum.mo
 show_map: false
 ```
@@ -156,7 +156,7 @@ show_map: false
 ## Troubleshooting
 
 **The card does not exist / blank card.** Hard-refresh the browser. If it persists, check
-that `/dreame_vacuum/dreame-vacuum-card.js` loads (open it directly) and look for
+that `/dreame_smart_vacuum/dreame-smart-vacuum-card.js` loads (open it directly) and look for
 `DREAME-VACUUM-CARD` in the browser console. Extra frontend modules are skipped entirely
 when Home Assistant boots in safe mode.
 

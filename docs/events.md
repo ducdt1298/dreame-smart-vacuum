@@ -7,7 +7,7 @@ Integration tracks certain device properties and notifies HA on specific events 
 ### Cleanup started or finished
 Fires when cleanup job is completed or canceled/ended.
 
-#### `dreame_vacuum_task_status`
+#### `dreame_smart_vacuum_task_status`
 - `entity_id`: Vacuum entity
 - `cleaning_mode`: Selected cleaning mode
 - `status`: Status
@@ -23,7 +23,7 @@ Fires when cleanup job is completed or canceled/ended.
 ### Consumable is depleted
 Fires when consumable life is ended.
 
-#### `dreame_vacuum_consumable`
+#### `dreame_smart_vacuum_consumable`
 - `entity_id`: Vacuum entity
 - `consumable`: Consumable type
   - `main_brush`: Main brush must be replaced
@@ -44,7 +44,7 @@ Fires when consumable life is ended.
 ### Information
 Fires when certain job cannot be executed due to the user settings.
 
-#### `dreame_vacuum_information`
+#### `dreame_smart_vacuum_information`
 - `entity_id`: Vacuum entity
 - `information`: Information type
   - `dust_collection`: Dust collection not performed due to the DnD settings
@@ -53,7 +53,7 @@ Fires when certain job cannot be executed due to the user settings.
 ### Warning
 Fires when there is a dismissible warning code on the device.
 
-#### `dreame_vacuum_warning`
+#### `dreame_smart_vacuum_warning`
 - `entity_id`: Vacuum entity
 - `warning`: Warning description
 - `code`: Fault code of the warning
@@ -61,7 +61,7 @@ Fires when there is a dismissible warning code on the device.
 ### Error
 Fires when there is a fault code on the device.
 
-#### `dreame_vacuum_error`
+#### `dreame_smart_vacuum_error`
 - `entity_id`: Vacuum entity
 - `error`: Error description
 - `code`: Fault code of the error
@@ -69,7 +69,7 @@ Fires when there is a fault code on the device.
 ### Low Water
 Fires when there is low water warning.
 
-#### `dreame_vacuum_low_water`
+#### `dreame_smart_vacuum_low_water`
 - `entity_id`: Vacuum entity
 - `low_water`: Low water warning description
 - `code`: Fault code of the low water warning
@@ -77,6 +77,6 @@ Fires when there is low water warning.
 ### Drainage Status
 Fires when water tank drainage is completed or failed.
 
-#### `dreame_vacuum_drainage_status`
+#### `dreame_smart_vacuum_drainage_status`
 - `entity_id`: Vacuum entity
 - `drainage_status`: Drainage is successful or not

@@ -1,15 +1,15 @@
 # Room entities for customized cleaning
-<img src="https://raw.githubusercontent.com/Tasshack/dreame-vacuum/master/docs/media/room_1_entities.png" width="450px">
+<img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/room_1_entities.png" width="450px">
 
 Integration exposes and manages room entities for customized cleaning settings that are introduced on firmware version 1156. If *customized cleaning* feature is enabled, robot uses these settings on *cleaning* and *custom segment cleaning* jobs and cannot be overridden by start action parameters.
 
 Room settings stored on current map data and only selected map custom cleaning settings can be accessed via the cloud api. Therefore integration shares same room entities with other saved maps and dynamically updates their entity names and icons respectively when selected map is changed. 
 
-<img src="https://raw.githubusercontent.com/Tasshack/dreame-vacuum/master/docs/media/rooms_map_1.png" width="350px"><img src="https://raw.githubusercontent.com/Tasshack/dreame-vacuum/master/docs/media/rooms_map_2.png" width="350px">
+<img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/rooms_map_1.png" width="350px"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/rooms_map_2.png" width="350px">
 
 Integration exposes rooms from all saved maps and updates their availability state according to the currently selected map.
 
-<img src="https://raw.githubusercontent.com/Tasshack/dreame-vacuum/master/docs/media/room_3_map_1.png" width="350px"><img src="https://raw.githubusercontent.com/Tasshack/dreame-vacuum/master/docs/media/room_3_map_2.png" width="350px">
+<img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/room_3_map_1.png" width="350px"><img src="https://raw.githubusercontent.com/ducdt1298/dreame-vacuum/main/docs/media/room_3_map_2.png" width="350px">
 
 ## Rooms card
 
@@ -103,12 +103,12 @@ entities:
             name: ' '
             tap_action: 
               action: call-service
-              service: dreame_vacuum.select_select_next
+              service: dreame_smart_vacuum.select_select_next
               service_data:
                 entity_id: ${vars[13].entity_id}
             double_tap_action:
               action: call-service
-              service: dreame_vacuum.select_select_previous
+              service: dreame_smart_vacuum.select_select_previous
               service_data:
                 entity_id: ${vars[13].entity_id}
             hold_action:
@@ -125,12 +125,12 @@ entities:
             name: ' '
             tap_action: 
               action: call-service
-              service: dreame_vacuum.select_select_next
+              service: dreame_smart_vacuum.select_select_next
               service_data:
                 entity_id: ${vars[2].entity_id}
             double_tap_action:
               action: call-service
-              service: dreame_vacuum.select_select_previous
+              service: dreame_smart_vacuum.select_select_previous
               service_data:
                 entity_id: ${vars[2].entity_id}
             hold_action:
@@ -146,12 +146,12 @@ entities:
             name: ' '
             tap_action:
               action: call-service
-              service: dreame_vacuum.select_select_next
+              service: dreame_smart_vacuum.select_select_next
               service_data:
                 entity_id: ${vars[3].entity_id}
             double_tap_action:
               action: call-service
-              service: dreame_vacuum.select_select_previous
+              service: dreame_smart_vacuum.select_select_previous
               service_data:
                 entity_id: ${vars[3].entity_id}
             styles:
@@ -165,12 +165,12 @@ entities:
             name: ' '
             tap_action:
               action: call-service
-              service: dreame_vacuum.select_select_next
+              service: dreame_smart_vacuum.select_select_next
               service_data:
                 entity_id: ${vars[4].entity_id}
             double_tap_action:
               action: call-service
-              service: dreame_vacuum.select_select_previous
+              service: dreame_smart_vacuum.select_select_previous
               service_data:
                 entity_id: ${vars[4].entity_id}
             hold_action:
@@ -186,7 +186,7 @@ entities:
             name: ' '
             tap_action:
               action: call-service
-              service: dreame_vacuum.select_select_next
+              service: dreame_smart_vacuum.select_select_next
               service_data:
                 entity_id: ${vars[5].entity_id}
                 cycle: false
@@ -206,7 +206,7 @@ entities:
             name: ' '
             tap_action:
               action: call-service
-              service: dreame_vacuum.select_select_previous
+              service: dreame_smart_vacuum.select_select_previous
               service_data:
                 entity_id: ${vars[5].entity_id}
                 cycle: false
@@ -227,4 +227,4 @@ entities:
 {%- endif %}
 ```
 
-#### <a href="https://github.com/Tasshack/dreame-vacuum/blob/master/docs/entities.md#select-entities-for-rooms">For more information about room entities</a>
+#### <a href="https://github.com/ducdt1298/dreame-vacuum/blob/main/docs/entities.md#select-entities-for-rooms">For more information about room entities</a>
