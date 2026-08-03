@@ -1,3 +1,5 @@
+![Dreame Smart Vacuum](docs/media/logo.png)
+
 # Dreame Smart Vacuum
 
 A Home Assistant integration for Dreame robot vacuums that replaces the Dreame
