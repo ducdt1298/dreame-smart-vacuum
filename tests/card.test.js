@@ -933,5 +933,110 @@ ok(
     "clean water tank status"
 );
 
+/* ---------------------------------------------------------------- *
+ * 13. Room chips survive a mode round trip
+ *
+ * Rooms -> All -> Rooms used to come back with an empty room list: leaving Rooms
+ * dropped the chip map but kept its signature, so the rebuild was skipped and the
+ * null map then threw, which also killed _renderActions and _renderHint for that
+ * frame. Drive the real render, not a reimplementation of it.
+ * ---------------------------------------------------------------- */
+console.log("\n[Room chips across modes]");
+
+function chipCard() {
+  const card = Object.create(M.DreameSmartVacuumCard.prototype);
+  const classes = new Set();
+  const children = [];
+  card._el = {
+    roomList: {
+      innerHTML: "",
+      appendChild(n) {
+        children.push(n);
+      },
+      classList: {
+        add: (c) => classes.add(c),
+        remove: (c) => classes.delete(c),
+        contains: (c) => classes.has(c),
+        toggle: (c, on) => (on ? classes.add(c) : classes.delete(c)),
+      },
+    },
+  };
+  card._classes = classes;
+  card._children = children;
+  card._mode = "rooms";
+  card._selection = [];
+  card._roomColors = null;
+  card._t = (k) => k;
+  card._rooms = () => ({ 1: { name: "Bếp" }, 2: { name: "Ngủ" }, 3: { name: "Khách" } });
+  return card;
+}
+
+const cc = chipCard();
+cc._renderRoomList();
+const firstCount = cc._roomChips ? cc._roomChips.size : 0;
+ok("chips build on first entry to Rooms", firstCount === 3, "got " + firstCount);
+ok("list is visible in Rooms", !cc._classes.has("gone"));
+
+cc._mode = "all";
+cc._renderRoomList();
+ok("chips torn down when leaving Rooms", cc._roomChips === null);
+ok("signature cleared with them", cc._roomChipSig == null, String(cc._roomChipSig));
+ok("list hidden outside Rooms", cc._classes.has("gone"));
+
+cc._mode = "rooms";
+let threw = null;
+try {
+  cc._renderRoomList();
+} catch (err) {
+  threw = err;
+}
+ok("coming back does not throw", threw === null, threw && threw.message);
+ok(
+  "chips are rebuilt on return",
+  cc._roomChips && cc._roomChips.size === 3,
+  "got " + (cc._roomChips ? cc._roomChips.size : "null")
+);
+ok("list visible again", !cc._classes.has("gone"));
+
+/* A selection made before the round trip must still read correctly afterwards. */
+const cc2 = chipCard();
+cc2._selection = [2, 1];
+cc2._renderRoomList();
+cc2._mode = "all";
+cc2._renderRoomList();
+cc2._mode = "rooms";
+cc2._selection = [2, 1];
+cc2._renderRoomList();
+ok("chips rebuilt with a live selection", cc2._roomChips.size === 3);
+
+/* Same trip through Zones, and with the room set changing while away - the
+   signature path and the map path must both hold. */
+const cc3 = chipCard();
+cc3._renderRoomList();
+cc3._mode = "zones";
+cc3._renderRoomList();
+cc3._mode = "rooms";
+cc3._rooms = () => ({ 4: { name: "Tắm" }, 5: { name: "Ban công" } });
+cc3._renderRoomList();
+ok(
+  "a changed room set rebuilds to the new ids",
+  cc3._roomChips.size === 2 && cc3._roomChips.has(4) && cc3._roomChips.has(5),
+  "got " + (cc3._roomChips ? [...cc3._roomChips.keys()].join(",") : "null")
+);
+
+/* No map yet: hide, and stay safe on the way back. */
+const cc4 = chipCard();
+cc4._rooms = () => null;
+cc4._renderRoomList();
+ok("no rooms hides the list", cc4._classes.has("gone") && cc4._roomChips === null);
+cc4._rooms = () => ({ 1: { name: "Bếp" } });
+let threw4 = null;
+try {
+  cc4._renderRoomList();
+} catch (err) {
+  threw4 = err;
+}
+ok("rooms appearing later builds chips", threw4 === null && cc4._roomChips.size === 1);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

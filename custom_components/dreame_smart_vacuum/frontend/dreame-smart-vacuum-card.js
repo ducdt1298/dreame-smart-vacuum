@@ -1735,7 +1735,12 @@ class DreameSmartVacuumCard extends HTMLElement {
     if (this._mode !== "rooms" || !rooms) {
       list.classList.add("gone");
       list.innerHTML = "";
+      /* Clear the signature with the chips. Leaving it set made the rebuild below
+         a no-op on the way back into Rooms - the chips had been torn out of the
+         DOM but `sig` still matched, so the list came back empty and the null map
+         then threw, taking _renderActions and _renderHint down with it. */
       this._roomChips = null;
+      this._roomChipSig = null;
       return;
     }
     list.classList.remove("gone");
@@ -1744,7 +1749,10 @@ class DreameSmartVacuumCard extends HTMLElement {
       .map(Number)
       .sort((a, b) => a - b);
     const sig = ids.join(",");
-    if (sig !== this._roomChipSig) {
+    /* The map guard is not redundant with the signature: any future path that
+       drops the chips has to be unable to leave the loop below dereferencing
+       null, whether or not it remembers to clear the signature too. */
+    if (!this._roomChips || sig !== this._roomChipSig) {
       list.innerHTML = "";
       this._roomChips = new Map();
       for (const id of ids) {
