@@ -9,7 +9,7 @@
     "http",
     "frontend"
   ],
-  "documentation": "https://github.com/ducdt1298/dreame-smart-vacuum/tree/main?tab=readme-ov-file#features",
+  "documentation": "https://github.com/ducdt1298/dreame-smart-vacuum",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/ducdt1298/dreame-smart-vacuum/issues",
   "requirements": [
