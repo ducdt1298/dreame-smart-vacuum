@@ -1097,6 +1097,7 @@ class DreameVacuumCard extends HTMLElement {
     const cam = this._cameraState();
     const active = (cam && cam.attributes.active_segments) || [];
     const parts = [];
+    this._ensureRoomColors();
 
     /* selected + active rooms */
     if (this._mode === "rooms") {
@@ -1108,7 +1109,7 @@ class DreameVacuumCard extends HTMLElement {
         const isActive = active.includes(id);
         if (!isSel && !isActive) continue;
 
-        const color = ROOM_COLORS[(room.color_index ?? 0) % ROOM_COLORS.length];
+        const color = this._roomColor(id, room);
         const d = this._roomPath(id, room);
         if (d) {
           parts.push(
@@ -1120,6 +1121,9 @@ class DreameVacuumCard extends HTMLElement {
           if (c) {
             const p = this._calib.toImage(c.x, c.y);
             const r = badgeR;
+            /* The server already draws the room name pill at the centre, so sit
+               above it like the app does instead of covering the name. */
+            p.y -= r * 1.9;
             parts.push(
               `<g class="badge"><circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(
                 1
@@ -1192,6 +1196,107 @@ class DreameVacuumCard extends HTMLElement {
     return (
       "M" + c.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join("L") + "Z"
     );
+  }
+
+  /* The renderer ships five colour schemes (Dreame light/dark, Mijia light/dark,
+     grayscale), so a hardcoded palette indexed by color_index gives the
+     selection tint a different colour from the room underneath it on four of
+     them. Read the real colour out of the rendered map instead, once per map. */
+  _ensureRoomColors() {
+    const img = this._el.img;
+    const rooms = this._rooms();
+    if (!img || !img.naturalWidth || !this._calib || !this._calib.ok || !rooms) return;
+
+    const cam = this._cameraState();
+    const sig = [
+      cam && cam.attributes.map_id,
+      this._geo.signature,
+      img.naturalWidth,
+      img.naturalHeight,
+    ].join("|");
+    if (this._colorSig === sig) return;
+    this._colorSig = sig;
+
+    const sampled = new Map();
+    try {
+      const cv = document.createElement("canvas");
+      cv.width = img.naturalWidth;
+      cv.height = img.naturalHeight;
+      const ctx = cv.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0);
+      const buf = ctx.getImageData(0, 0, cv.width, cv.height).data;
+
+      for (const idStr of Object.keys(rooms)) {
+        const id = Number(idStr);
+        const tally = new Map();
+        for (const [vx, vy] of this._colorSamplePoints(id, rooms[idStr])) {
+          const p = this._calib.toImage(vx, vy);
+          const x = Math.round(p.x);
+          const y = Math.round(p.y);
+          if (x < 0 || y < 0 || x >= cv.width || y >= cv.height) continue;
+          const o = (y * cv.width + x) * 4;
+          if (buf[o + 3] < 200) continue;
+          const r = buf[o];
+          const g = buf[o + 1];
+          const b = buf[o + 2];
+          const mx = Math.max(r, g, b);
+          const mn = Math.min(r, g, b);
+          /* Skip the grey wall pixels and the near-white name pill so we land on
+             the room fill itself. */
+          if (mx - mn < 12) continue;
+          if (mx > 246 && mn > 226) continue;
+          const key = r + "," + g + "," + b;
+          tally.set(key, (tally.get(key) || 0) + 1);
+        }
+        let best = null;
+        let bestN = 0;
+        for (const [k, n] of tally) {
+          if (n > bestN) {
+            bestN = n;
+            best = k;
+          }
+        }
+        if (best) sampled.set(id, "rgb(" + best + ")");
+      }
+    } catch (err) {
+      /* Tainted canvas or no 2d context: fall back to the static palette. */
+      // eslint-disable-next-line no-console
+      console.debug("dreame-vacuum-card: could not sample room colours", err);
+    }
+    this._roomColors = sampled;
+  }
+
+  /* Spread the samples across the room so one stray pixel cannot win the vote. */
+  _colorSamplePoints(id, room) {
+    const pts = [];
+    if (this._geo.hasMask) {
+      const geo = this._geo;
+      let seen = 0;
+      for (let iy = 0; iy < geo.height && pts.length < 32; iy += 2) {
+        for (let ix = 0; ix < geo.width && pts.length < 32; ix += 2) {
+          if (geo.mask[iy * geo.width + ix] !== id) continue;
+          if (seen++ % 3) continue;
+          pts.push([geo.left + (ix + 0.5) * geo.grid, geo.top + (iy + 0.5) * geo.grid]);
+        }
+      }
+    }
+    if (!pts.length && room.x0 != null) {
+      for (let fx = 0.2; fx <= 0.8; fx += 0.2) {
+        for (let fy = 0.2; fy <= 0.8; fy += 0.2) {
+          pts.push([
+            room.x0 + (room.x1 - room.x0) * fx,
+            room.y0 + (room.y1 - room.y0) * fy,
+          ]);
+        }
+      }
+    }
+    return pts;
+  }
+
+  _roomColor(id, room) {
+    const s = this._roomColors && this._roomColors.get(id);
+    if (s) return s;
+    return ROOM_COLORS[(room.color_index ?? 0) % ROOM_COLORS.length];
   }
 
   _roomCenter(room) {
@@ -1354,7 +1459,7 @@ class DreameVacuumCard extends HTMLElement {
       const room = rooms[String(id)];
       const order = this._selection.indexOf(id);
       const on = order >= 0;
-      const color = ROOM_COLORS[(room.color_index ?? 0) % ROOM_COLORS.length];
+      const color = this._roomColor(id, room);
       btn.classList.toggle("on", on);
       btn.style.setProperty("--rc", color);
       btn.setAttribute("aria-pressed", on ? "true" : "false");
@@ -2259,6 +2364,10 @@ const STYLES = `
 :host { display: block; }
 
 .dv {
+  /* Set explicitly rather than inheriting it from ha-card: the bottom sheet is
+     absolutely positioned against this element, and an inline containing block
+     collapses it to a sliver. */
+  display: block;
   --dv-radius: 22px;
   --dv-surface: var(--card-background-color, #fff);
   --dv-sunken: var(--secondary-background-color, #f2f3f5);
