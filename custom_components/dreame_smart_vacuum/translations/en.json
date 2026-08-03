@@ -1467,6 +1467,21 @@
       },
       "dnd": {
         "name": "DnD"
+      },
+      "smart_drying": {
+        "name": "Smart Drying"
+      },
+      "dust_bag_drying": {
+        "name": "Dust Bag Drying"
+      },
+      "ultra_clean_mode": {
+        "name": "Ultra Clean Mode"
+      },
+      "water_electrolysis": {
+        "name": "Water Electrolysis"
+      },
+      "self_clean_by_zone": {
+        "name": "Self-Clean By Zone"
       }
     },
     "number": {
@@ -1654,7 +1669,8 @@
         "wash_level": "Wash level",
         "zone_pick": "Tap a zone to move, resize or delete it",
         "zone_edit": "Drag to move, drag a corner to resize, × to delete",
-        "zone_clear": "Clear all"
+        "zone_clear": "Clear all",
+        "wetness_level": "Wetness"
       }
     },
     "frontend_config": {

@@ -86,8 +86,10 @@ const DOCK_ROWS = [
   { tab: "controls", grp: "wash", kind: "toggle", dom: "switch", k: "self_clean_by_zone" },
   { tab: "controls", grp: "wash", kind: "select", dom: "select", k: "washing_mode" },
   /* Upstream translates both washing_mode and mop_wash_level as "Chế độ giặt giẻ
-     lau", which puts two identically-titled pickers next to each other. Name this
-     one for what it actually picks. */
+     lau". They are mutually exclusive generations - mop_wash_level requires NOT
+     capability.smart_mop_washing - so a real machine only ever shows one, and the
+     clash only appeared in a preview that faked both. Naming this one for what it
+     picks is still clearer than two rows that could be confused for each other. */
   { tab: "controls", grp: "wash", kind: "select", dom: "select", k: "mop_wash_level", label: "wash_level" },
   { tab: "controls", grp: "wash", kind: "select", dom: "select", k: "mop_clean_frequency" },
   { tab: "controls", grp: "wash", kind: "select", dom: "select", k: "self_clean_frequency" },
@@ -95,7 +97,13 @@ const DOCK_ROWS = [
   { tab: "controls", grp: "wash", kind: "select", dom: "select", k: "scraper_frequency" },
   { tab: "controls", grp: "wash", kind: "number", dom: "number", k: "self_clean_area" },
   { tab: "controls", grp: "wash", kind: "number", dom: "number", k: "self_clean_time" },
-  { tab: "controls", grp: "wash", kind: "number", dom: "number", k: "mop_cleaning_remainder" },
+  /* Deliberately NOT here: number.mop_cleaning_remainder is gated on
+     `not capability.self_wash_base` - it is the nag timer to go wash the mop by
+     hand on machines that have no wash base, so it is the opposite of a dock
+     setting. Several rows above are generation variants of each other
+     (auto_dust_collecting vs auto_empty_mode, mop_wash_level vs washing_mode,
+     the drying_time select vs number): exactly one resolves per machine, which is
+     why both are listed. */
 
   /* --- Controls: drying -------------------------------------------- */
   { tab: "controls", grp: "dry", kind: "toggle", dom: "switch", k: "auto_drying" },
@@ -225,9 +233,11 @@ const FALLBACK = {
     no_rooms: "No saved rooms on this map",
     room_settings: "Room settings",
     save: "Save",
+    cancel: "Cancel",
     suction_level: "Suction",
     mop_pad_humidity: "Mop humidity",
     water_volume: "Water level",
+    wetness_level: "Wetness",
     cleaning_mode: "Cleaning mode",
   },
   vi: {
@@ -277,9 +287,11 @@ const FALLBACK = {
     no_rooms: "Bản đồ này chưa có phòng nào được lưu",
     room_settings: "Cài đặt phòng",
     save: "Lưu",
+    cancel: "Hủy",
     suction_level: "Lực hút",
     mop_pad_humidity: "Độ ẩm giẻ lau",
     water_volume: "Lượng nước",
+    wetness_level: "Độ ướt",
     cleaning_mode: "Chế độ làm sạch",
   },
 };

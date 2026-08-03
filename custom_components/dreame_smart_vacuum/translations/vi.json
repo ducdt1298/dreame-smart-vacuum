@@ -1467,6 +1467,21 @@
       },
       "dnd": {
         "name": "Chế độ không làm phiền (DnD)"
+      },
+      "smart_drying": {
+        "name": "Sấy thông minh"
+      },
+      "dust_bag_drying": {
+        "name": "Sấy túi bụi"
+      },
+      "ultra_clean_mode": {
+        "name": "Chế độ siêu sạch"
+      },
+      "water_electrolysis": {
+        "name": "Điện phân nước"
+      },
+      "self_clean_by_zone": {
+        "name": "Tự giặt theo khu vực"
       }
     },
     "number": {
@@ -1654,7 +1669,8 @@
         "wash_level": "Mức giặt",
         "zone_pick": "Bấm vào một vùng để di chuyển, thay đổi hoặc xoá",
         "zone_edit": "Kéo để di chuyển, kéo góc để thay đổi, × để xoá",
-        "zone_clear": "Xoá tất cả"
+        "zone_clear": "Xoá tất cả",
+        "wetness_level": "Độ ướt"
       }
     },
     "frontend_config": {

@@ -204,6 +204,14 @@ capability, so a machine without a wash base simply resolves fewer of them — t
 disappears, an empty group disappears, and a tab with nothing in it says so rather than
 showing dead controls. **Never assume a row is present.**
 
+Several rows are **generation variants of each other**, gated on *not* having a capability:
+`auto_dust_collecting` (a plain switch) versus `auto_empty_mode` (a select), `mop_wash_level`
+versus `washing_mode`, the `drying_time` select versus the `drying_time` number. Both are
+listed because exactly one resolves per machine. When adding a row, check the sign of its
+`exists_fn` — `number.mop_cleaning_remainder` looks like a wash setting but is gated on
+`not capability.self_wash_base`, being the nag timer for machines with no dock to wash in,
+and is deliberately excluded.
+
 For the same reason the ~60 dock entities are watched for changes only while the sheet is
 open; watching them permanently would defeat the card's render early-out.
 
