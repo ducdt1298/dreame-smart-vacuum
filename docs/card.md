@@ -109,35 +109,57 @@ backend, where CleanGenius marks suction, water and cleaning mode unavailable. T
 explicitly sets CleanGenius to `off` before a manual run, because segment cleaning does *not*
 disable it automatically and would otherwise ignore your suction and water choice.
 
-### Start and Về sạc / Return to dock
+### The action row, and where Return to dock went
 
-The action row holds only commands for the robot: **Start** (which becomes Pause / Resume
-while a job runs) and **Return to dock**.
+The action row keeps two buttons: **Start** (which becomes Pause / Resume while a job runs)
+and **Đế sạc / Dock**, which opens the dock sheet.
 
-The return button is stateful, which the earlier static one was not: it reads
-`Dừng về sạc` and turns into a pause icon while the robot is on its way home, and it
-disables itself when there is nothing to return from — parked on the dock, or busy washing
-or drying on it. There is no "cancel return" service, so stopping a return is sent as
-`vacuum.pause`.
+**Return to dock moved to an icon button in the header**, beside the battery. It is a command
+for the robot, not for the dock, so it does not belong in the same pair as a button that
+opens a settings sheet — and keeping it out of the action row leaves that row at two
+buttons.
+
+That button is stateful, which the old one was not: it flips to a pause icon and reads
+`Dừng về sạc` while the robot is on its way home, and it greys out when there is nothing to
+return from — parked on the dock, or busy washing or drying on it. There is no
+"cancel return" service, so stopping a return is sent as `vacuum.pause`.
 
 ## The dock sheet
 
-The dock icon in the header opens a separate sheet for the base station. It is deliberately
-*not* in the action row: the previous button was labelled with the noun "Đế sạc" yet only
-sent `return_to_base`, which read as a promise of dock controls that did not exist.
+The **Đế sạc / Dock** button beside Start opens a sheet for the base station. Previously that
+button carried the same noun but only sent `return_to_base`, which read as a promise of dock
+controls that did not exist; now the noun names something real.
 
 Three tabs:
 
 - **Điều khiển / Controls** — grouped by function (mop washing, drying, auto-empty, water
   tank, detergent). Each group leads with its one-shot actions — wash the mop now, dry now,
   empty the bin now, drain the water, clean the dock, self-repair — then its settings:
-  toggles, segmented pickers, and steppers for the numeric ones.
-- **Trạng thái / Status** — read-only. Base-station status, drying progress as a bar plus
-  time remaining, auto-empty and dust-bag status, clean/dirty water tank, detergent, hot
-  water, drainage, whether the tank and mop pad are fitted, and the low-water warning.
+  toggles, pickers, and steppers for the numeric ones.
 - **Vật tư / Supplies** — percentage left for detergent, squeegee, on-board dirty water
   tank, dirty water channel, deodorizer and scale inhibitor. Each bar turns red at 10% or
   less and carries its own **Đặt lại / Reset** button.
+- **Trạng thái / Status** — read-only. Base-station status, drying progress as a bar plus
+  time remaining, auto-empty and dust-bag status, clean/dirty water tank, detergent, hot
+  water, drainage, whether the tank and mop pad are fitted, and the low-water warning.
+
+### Pickers switch to a dropdown when the list gets long
+
+Settings render as segmented pills up to five options and as a native dropdown beyond that.
+`mop_clean_frequency` alone ships thirteen — by-room plus every area step in both m² and
+sq ft — which is an unreadable wall as pills, and a dropdown also gets the platform picker
+on a phone. The choice is made from the live option count, so a model with a different list
+length is handled without special-casing its key.
+
+### Switch names come from the wrong translation block
+
+The integration files its switch strings under `entity.toggle.*`, but Home Assistant resolves
+entity names from `entity.<domain>.*` — so every translated switch name in the repo is
+unreachable and `friendly_name` falls back to the English description name. The sheet reads
+`entity.toggle.*` directly so its rows stay translated. Fixing it properly means renaming
+that key in all 41 translation files, which is a separate change; a handful of switches
+(`smart_drying`, `dust_bag_drying`) have no translation in either place and still show
+English.
 
 ### Everything here is optional
 

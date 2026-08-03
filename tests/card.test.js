@@ -565,6 +565,86 @@ ok(
 );
 
 /* ---------------------------------------------------------------- *
+ * 8b. Dock entity resolution
+ *
+ * Reset buttons are named by a row's `reset` field rather than being rows, so
+ * they are easy to forget in the resolver - which is exactly what happened, and
+ * every supply row silently lost its Reset button.
+ * ---------------------------------------------------------------- */
+console.log("\n[Dock resolution]");
+
+function resolverCard(entities) {
+  const card = Object.create(M.DreameSmartVacuumCard.prototype);
+  card._config = { entity: "vacuum.robot" };
+  const registry = {
+    "vacuum.robot": {
+      entity_id: "vacuum.robot",
+      device_id: "d1",
+      platform: "dreame_smart_vacuum",
+      translation_key: "vacuum",
+    },
+  };
+  const states = { "vacuum.robot": { state: "docked", attributes: {} } };
+  for (const [eid, key] of entities) {
+    registry[eid] = {
+      entity_id: eid,
+      device_id: "d1",
+      platform: "dreame_smart_vacuum",
+      translation_key: key,
+    };
+    states[eid] = { state: "unknown", attributes: {} };
+  }
+  card._hass = { states, entities: registry, language: "en" };
+  return card;
+}
+
+const rc = resolverCard([
+  ["sensor.robot_detergent_left", "detergent_left"],
+  ["button.robot_reset_detergent", "reset_detergent"],
+  ["switch.robot_self_clean", "self_clean"],
+  ["button.robot_self_clean", "self_clean"],
+]);
+const resolved = rc._resolveEntities();
+
+ok(
+  "a supply sensor resolves",
+  resolved.dock["sensor.detergent_left"] === "sensor.robot_detergent_left"
+);
+ok(
+  "its reset button resolves too",
+  resolved.dock["button.reset_detergent"] === "button.robot_reset_detergent",
+  JSON.stringify(resolved.dock)
+);
+ok(
+  "the same key on two domains resolves to both",
+  resolved.dock["switch.self_clean"] === "switch.robot_self_clean" &&
+    resolved.dock["button.self_clean"] === "button.robot_self_clean"
+);
+ok(
+  "absent hardware resolves to nothing",
+  resolved.dock["sensor.hot_water_status"] === undefined
+);
+
+/* Every reset a row names must be resolvable in principle - i.e. it must be a
+   button key, since that is the domain the resolver looks it up under. */
+const rc2 = resolverCard(
+  M.DOCK_ROWS.filter((r) => r.reset).map((r) => [
+    "button.robot_" + r.reset,
+    r.reset,
+  ])
+);
+const resolved2 = rc2._resolveEntities();
+ok(
+  "every declared reset button resolves",
+  M.DOCK_ROWS.filter((r) => r.reset).every(
+    (r) => resolved2.dock["button." + r.reset]
+  ),
+  M.DOCK_ROWS.filter((r) => r.reset && !resolved2.dock["button." + r.reset])
+    .map((r) => r.reset)
+    .join(",")
+);
+
+/* ---------------------------------------------------------------- *
  * 9. Return-to-dock button state
  * ---------------------------------------------------------------- */
 console.log("\n[Return button]");

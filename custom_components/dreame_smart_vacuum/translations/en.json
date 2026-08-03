@@ -1650,7 +1650,8 @@
         "st_drying_progress": "Drying progress",
         "st_drying_left": "Drying time left",
         "st_bag_drying_left": "Dust bag drying left",
-        "st_channel_left": "Dirty water channel"
+        "st_channel_left": "Dirty water channel",
+        "wash_level": "Wash level"
       }
     },
     "frontend_config": {

@@ -1650,7 +1650,8 @@
         "st_drying_progress": "Tiến trình sấy",
         "st_drying_left": "Thời gian sấy còn lại",
         "st_bag_drying_left": "Sấy túi bụi còn lại",
-        "st_channel_left": "Ống nước thải"
+        "st_channel_left": "Ống nước thải",
+        "wash_level": "Mức giặt"
       }
     },
     "frontend_config": {

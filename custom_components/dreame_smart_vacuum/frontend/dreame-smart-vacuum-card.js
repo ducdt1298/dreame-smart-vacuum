@@ -85,7 +85,10 @@ const DOCK_ROWS = [
   { tab: "controls", grp: "wash", kind: "toggle", dom: "switch", k: "water_electrolysis" },
   { tab: "controls", grp: "wash", kind: "toggle", dom: "switch", k: "self_clean_by_zone" },
   { tab: "controls", grp: "wash", kind: "select", dom: "select", k: "washing_mode" },
-  { tab: "controls", grp: "wash", kind: "select", dom: "select", k: "mop_wash_level" },
+  /* Upstream translates both washing_mode and mop_wash_level as "Chế độ giặt giẻ
+     lau", which puts two identically-titled pickers next to each other. Name this
+     one for what it actually picks. */
+  { tab: "controls", grp: "wash", kind: "select", dom: "select", k: "mop_wash_level", label: "wash_level" },
   { tab: "controls", grp: "wash", kind: "select", dom: "select", k: "mop_clean_frequency" },
   { tab: "controls", grp: "wash", kind: "select", dom: "select", k: "self_clean_frequency" },
   { tab: "controls", grp: "wash", kind: "select", dom: "select", k: "auto_rewashing" },
@@ -146,7 +149,11 @@ const DOCK_ROWS = [
   { tab: "supplies", kind: "wear", dom: "sensor", k: "scale_inhibitor_left", reset: "reset_scale_inhibitor" },
 ];
 
-const DOCK_TABS = ["controls", "status", "supplies"];
+/* Beyond this many options a picker stops being scannable as pills and becomes a
+   dropdown instead. */
+const SELECT_MAX_SEGMENTS = 5;
+
+const DOCK_TABS = ["controls", "supplies", "status"];
 const DOCK_GROUPS = [
   ["wash", "water"],
   ["dry", "dry"],
@@ -202,6 +209,7 @@ const FALLBACK = {
     st_drying_left: "Drying time left",
     st_bag_drying_left: "Dust bag drying left",
     st_channel_left: "Dirty water channel",
+    wash_level: "Wash level",
     reset: "Reset",
     custom: "Custom",
     cleaning_settings: "Cleaning settings",
@@ -250,6 +258,7 @@ const FALLBACK = {
     st_drying_left: "Thời gian sấy còn lại",
     st_bag_drying_left: "Sấy túi bụi còn lại",
     st_channel_left: "Ống nước thải",
+    wash_level: "Mức giặt",
     reset: "Đặt lại",
     custom: "Tùy chỉnh",
     cleaning_settings: "Cài đặt làm sạch",
@@ -750,6 +759,13 @@ class DreameSmartVacuumCard extends HTMLElement {
     for (const row of DOCK_ROWS) {
       const id = pick(row.dom, row.k);
       if (id) out.dock[row.dom + "." + row.k] = id;
+      /* Reset buttons are referenced by a row rather than being rows themselves,
+         so they need resolving here too - otherwise every supply renders without
+         the button that is the whole point of the row. */
+      if (row.reset) {
+        const rid = pick("button", row.reset);
+        if (rid) out.dock["button." + row.reset] = rid;
+      }
     }
 
     out.camera =
@@ -941,8 +957,8 @@ class DreameSmartVacuumCard extends HTMLElement {
             <span class="batt-shell"><span class="batt-fill"></span></span>
             <span class="batt-txt"></span>
           </div>
-          <button class="icon-btn station-btn" aria-haspopup="dialog" title="">
-            ${svg(ICON.station)}
+          <button class="icon-btn ret-btn" title="">
+            ${svg(ICON.home)}
           </button>
         </div>
 
@@ -980,8 +996,8 @@ class DreameSmartVacuumCard extends HTMLElement {
               <span class="act-txt"></span>
             </button>
             <span class="act-sep"></span>
-            <button class="act act-return">
-              ${svg(ICON.home, "act-ico")}
+            <button class="act act-dock" aria-haspopup="dialog">
+              ${svg(ICON.station, "act-ico")}
               <span class="act-txt"></span>
             </button>
           </div>
@@ -1015,10 +1031,10 @@ class DreameSmartVacuumCard extends HTMLElement {
       start: $(".act-start"),
       startTxt: $(".act-start .act-txt"),
       startIco: $(".act-start .act-ico path"),
-      ret: $(".act-return"),
-      retTxt: $(".act-return .act-txt"),
-      retIco: $(".act-return .act-ico path"),
-      station: $(".station-btn"),
+      dock: $(".act-dock"),
+      dockTxt: $(".act-dock .act-txt"),
+      ret: $(".ret-btn"),
+      retIco: $(".ret-btn svg path"),
       scrim: $(".scrim"),
       sheet: $(".sheet"),
       toast: $(".toast"),
@@ -1029,8 +1045,8 @@ class DreameSmartVacuumCard extends HTMLElement {
     );
     this._el.chip.addEventListener("click", () => this._openSheet("settings"));
     this._el.start.addEventListener("click", () => this._onStart());
+    this._el.dock.addEventListener("click", () => this._openSheet("dock"));
     this._el.ret.addEventListener("click", () => this._onReturn());
-    this._el.station.addEventListener("click", () => this._openSheet("dock"));
     this._el.scrim.addEventListener("click", () => this._closeSheet());
     this._el.mapSwitch.addEventListener("click", () => this._cycleMap());
 
@@ -1573,23 +1589,26 @@ class DreameSmartVacuumCard extends HTMLElement {
     if (this._el.startIco.getAttribute("d") !== icon) {
       this._el.startIco.setAttribute("d", icon);
     }
-    /* The old button was a static noun ("Dock") that never disabled, so it read
-       as "dock settings" and invited a pointless tap while already parked. Say
-       what it does, and say nothing when there is nothing to do. */
+    /* Beside Start, the dock button now opens the dock sheet - so the noun it was
+       always labelled with finally names something real. */
+    this._setText(this._el.dockTxt, this._t("dock_station"));
+
+    /* Return-to-dock lives in the header, icon-only: it is a robot command, not a
+       dock one, and putting it here keeps the action row to two buttons. It flips
+       to a pause icon on the way home and greys out when there is nothing to
+       return from, which the old static button never did. */
     const returning = vac.state === "returning";
-    this._setText(this._el.retTxt, this._t(returning ? "returning" : "dock"));
     const retIcon = returning ? ICON.pause : ICON.home;
     if (this._el.retIco.getAttribute("d") !== retIcon) {
       this._el.retIco.setAttribute("d", retIcon);
     }
+    const retLabel = this._t(returning ? "returning" : "dock");
+    this._el.ret.title = retLabel;
+    this._el.ret.setAttribute("aria-label", retLabel);
     this._el.ret.toggleAttribute(
       "disabled",
       this._busy || this._isDocked(vac, attrs)
     );
-
-    /* Label via title/aria only - the button's content is an inline svg. */
-    this._el.station.title = this._t("dock_station");
-    this._el.station.setAttribute("aria-label", this._t("dock_station"));
 
     const blocked =
       this._busy ||
@@ -2208,6 +2227,20 @@ class DreameSmartVacuumCard extends HTMLElement {
      otherwise the entity's own translated name. */
   _dockLabel(row, st) {
     if (row.label) return this._t(row.label);
+
+    /* Switch names arrive untranslated: the integration files their strings under
+       `entity.toggle.*`, but HA resolves entity names from `entity.<domain>.*`, so
+       every Vietnamese switch label in the repo is unreachable and friendly_name
+       falls back to the English description name. Read the block the strings are
+       actually in. Fixing it upstream means renaming that key in 41 files, which
+       is a separate change; this keeps the sheet translated meanwhile. */
+    if (row.dom === "switch" && this._hass && this._hass.localize) {
+      const alt = this._hass.localize(
+        `component.${INTEGRATION}.entity.toggle.${row.k}.name`
+      );
+      if (alt) return alt;
+    }
+
     const fn = st && st.attributes && st.attributes.friendly_name;
     if (!fn) return row.k.replace(/_/g, " ");
     /* has_entity_name makes friendly_name "<device> <entity>", and repeating the
@@ -2311,7 +2344,12 @@ class DreameSmartVacuumCard extends HTMLElement {
   }
 
   /* Selects reuse the segmented picker the cleaning sheet already uses, so the
-     two sheets do not end up looking like different apps. */
+     two sheets do not end up looking like different apps - but only while the
+     options fit. mop_clean_frequency ships 13 of them (by-room plus every area
+     step in m2 and sq ft), which as pills is an unreadable wall; past the
+     threshold it becomes a native dropdown, which also gets the platform picker
+     on a phone. Driven by the live option count, so a model with a longer or
+     shorter list is handled without special-casing its key. */
   _dockSelect(row, id) {
     const st = this._st(id);
     if (!st || st.state === "unavailable") return null;
@@ -2321,13 +2359,36 @@ class DreameSmartVacuumCard extends HTMLElement {
       value: v,
       label: this._tState("select", row.k, v) || String(v),
     }));
+
+    if (row.dropdown || opts.length > SELECT_MAX_SEGMENTS) {
+      return this._dockDropdown(row, id, st, opts);
+    }
+    /* Fall back to the group's own icon rather than a generic one, so a washing
+       picker gets the washing glyph instead of an arbitrary wand. */
+    const grp = DOCK_GROUPS.find(([g]) => g === row.grp);
     return this._group(
       this._dockLabel(row, st),
-      ICON[row.icon] || ICON.autofix,
+      ICON[row.icon] || (grp && ICON[grp[1]]) || ICON.autofix,
       opts,
       st.state,
       (v) => this._selectOption(id, v)
     );
+  }
+
+  _dockDropdown(row, id, st, opts) {
+    const el = this._dockRowShell(this._dockLabel(row, st));
+    const sel = document.createElement("select");
+    sel.className = "dsel";
+    for (const o of opts) {
+      const op = document.createElement("option");
+      op.value = o.value;
+      op.textContent = o.label;
+      if (o.value === st.state) op.selected = true;
+      sel.appendChild(op);
+    }
+    sel.addEventListener("change", () => this._selectOption(id, sel.value));
+    el.querySelector(".drow-val").replaceWith(sel);
+    return el;
   }
 
   /* Stepper rather than a slider: these are all coarse values (minutes, m2) and
@@ -3059,7 +3120,7 @@ const STYLES = `
 .act[disabled] { opacity: .38; cursor: default; }
 .act-ico { width: 22px; height: 22px; flex: none; }
 .act-start .act-ico { fill: var(--dv-warm); }
-.act-return .act-ico { fill: var(--dv-accent); }
+.act-dock .act-ico { fill: var(--dv-accent); }
 .act-sep { width: 1px; background: var(--dv-line); margin: 12px 0; flex: none; }
 .act-txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -3116,8 +3177,9 @@ const STYLES = `
   font-weight: 600;
 }
 /* ---------- dock sheet ---------- */
-.station-btn { flex: none; color: var(--dv-dim); }
-.station-btn:hover { color: var(--dv-accent); }
+.ret-btn { flex: none; color: var(--dv-dim); }
+.ret-btn:hover:not([disabled]) { color: var(--dv-accent); }
+.ret-btn[disabled] { opacity: .32; cursor: default; }
 /* The main tab strip animates a .tab-ind pill; these tabs are rebuilt on every
    render so they paint the selected state directly instead. */
 .dock-tabs { margin: 2px 12px 4px; }
@@ -3150,6 +3212,9 @@ const STYLES = `
   padding: 5px 10px; min-height: 30px; font-size: .76rem;
   color: var(--dv-dim); flex: none;
 }
+/* The bar takes a whole line, so the reset button wraps below it - push it to the
+   right rather than leaving it stranded under the label. */
+.drow-bar .dbtn-quiet { margin-left: auto; margin-top: 6px; }
 .dbtn-step {
   width: 32px; height: 32px; min-height: 32px; padding: 0;
   justify-content: center; border-radius: 10px;
@@ -3172,6 +3237,13 @@ const STYLES = `
 }
 .dbar-fill { display: block; height: 100%; background: var(--dv-accent); }
 .dbar.low .dbar-fill { background: #e5533d; }
+.dsel {
+  flex: none; max-width: 58%;
+  border: 1.5px solid var(--dv-line); border-radius: 11px;
+  background: var(--dv-surface); color: var(--dv-text);
+  font: inherit; font-size: .82rem; padding: 7px 9px; cursor: pointer;
+}
+.dsel:focus-visible { outline: 2px solid var(--dv-accent); outline-offset: 2px; }
 .dstep { display: inline-flex; align-items: center; gap: 8px; flex: none; }
 .dstep-val {
   min-width: 62px; text-align: center; color: var(--dv-text);
