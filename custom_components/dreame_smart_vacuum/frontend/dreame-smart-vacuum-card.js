@@ -67,13 +67,19 @@ const ICON = {
  * ------------------------------------------------------------------ */
 
 const DOCK_ROWS = [
-  /* --- Controls: one-shot actions ---------------------------------- */
+  /* --- Controls: one-shot actions ----------------------------------
+     Every action lands in a single strip at the top of the tab, in the order
+     written here - press one and the base does it immediately, which is a
+     different act from turning a knob and is worth keeping in one place rather
+     than scattering across the group sections below. The three that get pressed
+     daily lead; the occasional maintenance ones follow. `grp` is still declared
+     because the select pickers borrow their group's icon. */
   { tab: "controls", grp: "wash", kind: "action", dom: "button", k: "self_clean", label: "act_wash_now", icon: "water" },
+  { tab: "controls", grp: "dry", kind: "action", dom: "button", k: "manual_drying", label: "act_dry_now", icon: "dry" },
+  { tab: "controls", grp: "empty", kind: "action", dom: "button", k: "start_auto_empty", label: "act_empty_now", icon: "bag" },
+  { tab: "controls", grp: "dry", kind: "action", dom: "button", k: "manual_dust_bag_drying", label: "act_dry_bag", icon: "bag" },
   { tab: "controls", grp: "wash", kind: "action", dom: "button", k: "base_station_cleaning", label: "act_clean_station", icon: "autorenew" },
   { tab: "controls", grp: "wash", kind: "action", dom: "button", k: "base_station_self_repair", label: "act_self_repair", icon: "autofix" },
-  { tab: "controls", grp: "dry", kind: "action", dom: "button", k: "manual_drying", label: "act_dry_now", icon: "dry" },
-  { tab: "controls", grp: "dry", kind: "action", dom: "button", k: "manual_dust_bag_drying", label: "act_dry_bag", icon: "bag" },
-  { tab: "controls", grp: "empty", kind: "action", dom: "button", k: "start_auto_empty", label: "act_empty_now", icon: "bag" },
   { tab: "controls", grp: "water", kind: "action", dom: "button", k: "water_tank_draining", label: "act_drain", icon: "water" },
   { tab: "controls", grp: "water", kind: "action", dom: "button", k: "empty_water_tank", label: "act_empty_tank", icon: "water" },
 
@@ -125,43 +131,59 @@ const DOCK_ROWS = [
   { tab: "controls", grp: "detergent", kind: "toggle", dom: "switch", k: "mopping_with_detergent" },
   { tab: "controls", grp: "detergent", kind: "toggle", dom: "switch", k: "mop_washing_with_detergent" },
 
-  /* --- Status ------------------------------------------------------- */
-  { tab: "status", kind: "stat", dom: "sensor", k: "self_wash_base_status" },
-  { tab: "status", kind: "bar", dom: "sensor", k: "drying_progress", label: "st_drying_progress" },
-  { tab: "status", kind: "stat", dom: "sensor", k: "drying_left", label: "st_drying_left" },
-  { tab: "status", kind: "stat", dom: "sensor", k: "auto_empty_status" },
-  { tab: "status", kind: "stat", dom: "sensor", k: "dust_collection" },
-  { tab: "status", kind: "stat", dom: "sensor", k: "dust_bag_drying_status" },
-  { tab: "status", kind: "stat", dom: "sensor", k: "dust_bag_drying_left", label: "st_bag_drying_left" },
-  { tab: "status", kind: "stat", dom: "sensor", k: "clean_water_tank_status" },
-  { tab: "status", kind: "stat", dom: "sensor", k: "dirty_water_tank_status" },
-  { tab: "status", kind: "stat", dom: "sensor", k: "dust_bag_status" },
-  { tab: "status", kind: "stat", dom: "sensor", k: "detergent_status" },
-  { tab: "status", kind: "stat", dom: "sensor", k: "hot_water_status" },
-  { tab: "status", kind: "stat", dom: "sensor", k: "station_drainage_status" },
-  { tab: "status", kind: "stat", dom: "sensor", k: "drainage_status" },
-  { tab: "status", kind: "stat", dom: "sensor", k: "water_tank" },
-  { tab: "status", kind: "stat", dom: "sensor", k: "mop_pad" },
-  { tab: "status", kind: "stat", dom: "sensor", k: "low_water_warning" },
+  /* --- Status -------------------------------------------------------
+     One tab for everything the base reports, grouped by the same five headings
+     the Controls tab uses, so "what is the drying doing" is read in the same
+     place it is configured. Supply wear ("% left" plus its Reset) used to be a
+     tab of its own; most bases resolve none of those sensors, which left an
+     always-empty tab, so each one now sits under the group it belongs to and
+     simply does not render when absent. Within a group: live status first, then
+     the consumable that wears out. */
 
-  /* --- Supplies: percentage left, each with its own reset ----------- */
-  { tab: "supplies", kind: "wear", dom: "sensor", k: "detergent_left", reset: "reset_detergent" },
-  { tab: "supplies", kind: "wear", dom: "sensor", k: "squeegee_left", reset: "reset_squeegee" },
-  { tab: "supplies", kind: "wear", dom: "sensor", k: "onboard_dirty_water_tank_left", reset: "reset_onboard_dirty_water_tank" },
+  /* Mop washing */
+  { tab: "status", grp: "wash", kind: "stat", dom: "sensor", k: "self_wash_base_status" },
+  { tab: "status", grp: "wash", kind: "stat", dom: "sensor", k: "mop_pad" },
+  { tab: "status", grp: "wash", kind: "wear", dom: "sensor", k: "squeegee_left", reset: "reset_squeegee" },
   /* Upstream's PROPERTY_TO_NAME spells this one with the enum still half in
      caps, and strings.json declares the lower-case form, so the entity ends up
      with no translation at all. Match the key the registry really carries, and
      supply our own label rather than inherit the untranslated one. */
-  { tab: "supplies", kind: "wear", dom: "sensor", k: "DIRTY_WATER_CHANNEL_DIRTY_left", label: "st_channel_left", reset: "reset_dirty_water_channel" },
-  { tab: "supplies", kind: "wear", dom: "sensor", k: "deodorizer_left", reset: "reset_deodorizer" },
-  { tab: "supplies", kind: "wear", dom: "sensor", k: "scale_inhibitor_left", reset: "reset_scale_inhibitor" },
+  { tab: "status", grp: "wash", kind: "wear", dom: "sensor", k: "DIRTY_WATER_CHANNEL_DIRTY_left", label: "st_channel_left", reset: "reset_dirty_water_channel" },
+
+  /* Drying */
+  { tab: "status", grp: "dry", kind: "bar", dom: "sensor", k: "drying_progress", label: "st_drying_progress" },
+  { tab: "status", grp: "dry", kind: "stat", dom: "sensor", k: "drying_left", label: "st_drying_left" },
+  { tab: "status", grp: "dry", kind: "stat", dom: "sensor", k: "dust_bag_drying_status" },
+  { tab: "status", grp: "dry", kind: "stat", dom: "sensor", k: "dust_bag_drying_left", label: "st_bag_drying_left" },
+
+  /* Auto-empty */
+  { tab: "status", grp: "empty", kind: "stat", dom: "sensor", k: "auto_empty_status" },
+  { tab: "status", grp: "empty", kind: "stat", dom: "sensor", k: "dust_collection" },
+  { tab: "status", grp: "empty", kind: "stat", dom: "sensor", k: "dust_bag_status" },
+
+  /* Water */
+  { tab: "status", grp: "water", kind: "stat", dom: "sensor", k: "water_tank" },
+  { tab: "status", grp: "water", kind: "stat", dom: "sensor", k: "low_water_warning" },
+  { tab: "status", grp: "water", kind: "stat", dom: "sensor", k: "clean_water_tank_status" },
+  { tab: "status", grp: "water", kind: "stat", dom: "sensor", k: "dirty_water_tank_status" },
+  { tab: "status", grp: "water", kind: "stat", dom: "sensor", k: "hot_water_status" },
+  { tab: "status", grp: "water", kind: "stat", dom: "sensor", k: "station_drainage_status" },
+  { tab: "status", grp: "water", kind: "stat", dom: "sensor", k: "drainage_status" },
+  { tab: "status", grp: "water", kind: "wear", dom: "sensor", k: "onboard_dirty_water_tank_left", reset: "reset_onboard_dirty_water_tank" },
+
+  /* Detergent and the other bottles */
+  { tab: "status", grp: "detergent", kind: "stat", dom: "sensor", k: "detergent_status" },
+  { tab: "status", grp: "detergent", kind: "wear", dom: "sensor", k: "detergent_left", reset: "reset_detergent" },
+  { tab: "status", grp: "detergent", kind: "wear", dom: "sensor", k: "deodorizer_left", reset: "reset_deodorizer" },
+  { tab: "status", grp: "detergent", kind: "wear", dom: "sensor", k: "scale_inhibitor_left", reset: "reset_scale_inhibitor" },
 ];
 
 /* Beyond this many options a picker stops being scannable as pills and becomes a
    dropdown instead. */
 const SELECT_MAX_SEGMENTS = 5;
 
-const DOCK_TABS = ["controls", "supplies", "status"];
+const DOCK_TABS = ["controls", "status"];
+/* Both tabs are laid out with these headings, in this order. */
 const DOCK_GROUPS = [
   ["wash", "water"],
   ["dry", "dry"],
@@ -198,7 +220,7 @@ const FALLBACK = {
     dock_station: "Dock",
     dock_tab_controls: "Controls",
     dock_tab_status: "Status",
-    dock_tab_supplies: "Supplies",
+    dock_grp_quick: "Do it now",
     dock_grp_wash: "Mop washing",
     dock_grp_dry: "Drying",
     dock_grp_empty: "Auto-empty",
@@ -252,7 +274,7 @@ const FALLBACK = {
     dock_station: "Đế sạc",
     dock_tab_controls: "Điều khiển",
     dock_tab_status: "Trạng thái",
-    dock_tab_supplies: "Vật tư",
+    dock_grp_quick: "Làm ngay",
     dock_grp_wash: "Giặt giẻ lau",
     dock_grp_dry: "Sấy",
     dock_grp_empty: "Tự hút bụi",
@@ -2790,7 +2812,9 @@ class DreameSmartVacuumCard extends HTMLElement {
     const dock = (ent && ent.dock) || {};
     const sheet = this._el.sheet;
     const scroll = sheet.scrollTop;
-    const tab = this._dockTab || "controls";
+    /* Fall back rather than trust the stored name: a tab that no longer exists
+       would paint no buttons and an empty body. */
+    const tab = DOCK_TABS.includes(this._dockTab) ? this._dockTab : "controls";
 
     sheet.innerHTML = `
       <div class="grab"></div>
@@ -2844,43 +2868,44 @@ class DreameSmartVacuumCard extends HTMLElement {
       }
     };
 
+    const heading = (icon, text) => {
+      const hd = document.createElement("div");
+      hd.className = "dgrp-hd";
+      hd.innerHTML = svg(ICON[icon] || ICON.autofix, "grp-ico");
+      const t = document.createElement("span");
+      t.textContent = text;
+      hd.appendChild(t);
+      return hd;
+    };
+
     let painted = 0;
-    if (tab === "controls") {
-      /* Actions first inside each group, then its settings - "do it now" is the
-         reason people open this sheet, the knobs are the rarer visit. */
-      for (const [grp, icon] of DOCK_GROUPS) {
-        const rows = rowsFor("controls").filter((r) => r.grp === grp);
-        const acts = [];
-        const rest = [];
-        for (const row of rows) {
-          const node = build(row);
-          if (!node) continue;
-          (row.kind === "action" ? acts : rest).push(node);
-        }
-        if (!acts.length && !rest.length) continue;
-        const hd = document.createElement("div");
-        hd.className = "dgrp-hd";
-        hd.innerHTML = svg(ICON[icon] || ICON.autofix, "grp-ico");
-        const t = document.createElement("span");
-        t.textContent = this._t("dock_grp_" + grp);
-        hd.appendChild(t);
-        body.appendChild(hd);
-        if (acts.length) {
-          const strip = document.createElement("div");
-          strip.className = "dacts";
-          acts.forEach((n) => strip.appendChild(n));
-          body.appendChild(strip);
-        }
-        rest.forEach((n) => body.appendChild(n));
-        painted += acts.length + rest.length;
-      }
-    } else {
-      for (const row of rowsFor(tab)) {
-        const node = build(row);
-        if (!node) continue;
-        body.appendChild(node);
-        painted++;
-      }
+
+    /* Every one-shot action goes in one strip at the top, ahead of any group.
+       They are the reason people open this sheet - press and the base starts -
+       whereas the rows below are settings you adjust once and forget. Mixing the
+       two per group meant hunting for "dry now" three headings down. */
+    const acts = rowsFor(tab)
+      .filter((r) => r.kind === "action")
+      .map(build)
+      .filter(Boolean);
+    if (acts.length) {
+      body.appendChild(heading("autofix", this._t("dock_grp_quick")));
+      const strip = document.createElement("div");
+      strip.className = "dacts";
+      acts.forEach((n) => strip.appendChild(n));
+      body.appendChild(strip);
+      painted += acts.length;
+    }
+
+    for (const [grp, icon] of DOCK_GROUPS) {
+      const nodes = rowsFor(tab)
+        .filter((r) => r.grp === grp && r.kind !== "action")
+        .map(build)
+        .filter(Boolean);
+      if (!nodes.length) continue;
+      body.appendChild(heading(icon, this._t("dock_grp_" + grp)));
+      nodes.forEach((n) => body.appendChild(n));
+      painted += nodes.length;
     }
 
     if (!painted) {

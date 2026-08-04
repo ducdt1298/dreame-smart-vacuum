@@ -25,8 +25,14 @@ const SRC = fs.readFileSync(
   "utf8"
 );
 
+/* appendChild records, so a test can read back what a render actually built and
+   in what order - querySelector still hands out throwaway stubs. */
 const stubEl = () => ({
-  appendChild() {},
+  children: [],
+  appendChild(n) {
+    this.children.push(n);
+  },
+  replaceWith() {},
   addEventListener() {},
   removeEventListener() {},
   setAttribute() {},
@@ -763,20 +769,51 @@ ok(
   "every group icon exists",
   M.DOCK_GROUPS.every(([, icon]) => icon in M.ICON)
 );
-/* A group with no rows renders nothing, so an unknown grp is a dead entry. */
+/* Both tabs render group by group, so a row whose grp is not in DOCK_GROUPS is
+   never reached - it is dropped as silently as a misspelt entity key. */
 const groupNames = M.DOCK_GROUPS.map(([g]) => g);
 ok(
-  "control rows only use declared groups",
-  M.DOCK_ROWS.filter((r) => r.tab === "controls").every((r) =>
-    groupNames.includes(r.grp)
-  ),
-  M.DOCK_ROWS.filter((r) => r.tab === "controls" && !groupNames.includes(r.grp))
-    .map((r) => r.k)
-    .join(",")
+  "every row sits in a declared group",
+  M.DOCK_ROWS.every((r) => groupNames.includes(r.grp)),
+  M.DOCK_ROWS.filter((r) => !groupNames.includes(r.grp)).map((r) => r.k).join(",")
+);
+/* And the reverse: a heading nothing files under is a dead entry. */
+ok(
+  "every declared group has rows",
+  groupNames.every((g) => M.DOCK_ROWS.some((r) => r.grp === g)),
+  groupNames.filter((g) => !M.DOCK_ROWS.some((r) => r.grp === g)).join(",")
 );
 ok(
   "each tab has at least one row",
   M.DOCK_TABS.every((t) => M.DOCK_ROWS.some((r) => r.tab === t))
+);
+
+/* Supplies was folded into Status: almost no base resolves those sensors, so it
+   was an always-empty third tab. A row left pointing at it would vanish. */
+ok("supplies is no longer a tab", !M.DOCK_TABS.includes("supplies"));
+ok(
+  "wear rows moved to the status tab",
+  M.DOCK_ROWS.filter((r) => r.kind === "wear").every((r) => r.tab === "status"),
+  M.DOCK_ROWS.filter((r) => r.kind === "wear" && r.tab !== "status")
+    .map((r) => r.k)
+    .join(",")
+);
+
+/* The strip renders in array order, and these three are the everyday presses. */
+const actionLabels = M.DOCK_ROWS.filter((r) => r.kind === "action").map(
+  (r) => r.label
+);
+ok(
+  "the everyday actions lead the strip",
+  actionLabels.slice(0, 3).join(",") ===
+    "act_wash_now,act_dry_now,act_empty_now",
+  actionLabels.join(",")
+);
+ok(
+  "only the controls tab carries actions",
+  M.DOCK_ROWS.filter((r) => r.kind === "action").every(
+    (r) => r.tab === "controls"
+  )
 );
 
 /* All icon paths must be parseable svg path data - a hand-drawn typo here shows
@@ -871,6 +908,121 @@ ok(
   M.DOCK_ROWS.filter((r) => r.reset && !resolved2.dock["button." + r.reset])
     .map((r) => r.reset)
     .join(",")
+);
+
+/* ---------------------------------------------------------------- *
+ * 8c. Dock sheet layout
+ *
+ * Where a row lands is decided by the renderer, not by DOCK_ROWS: every one-shot
+ * action is lifted into a single strip at the top of the tab and the group
+ * sections follow. Drive the real render and read back what it appended, in
+ * order - a spec assertion cannot see this.
+ * ---------------------------------------------------------------- */
+console.log("\n[Dock layout]");
+
+function layoutCard(entities, tab) {
+  const card = resolverCard(entities);
+  card._dockTab = tab;
+  const body = stubEl();
+  card._el = {
+    sheet: {
+      innerHTML: "",
+      scrollTop: 0,
+      querySelector: (sel) => (sel === ".dock-body" ? body : stubEl()),
+    },
+  };
+  card._renderDockSheet();
+  return body.children;
+}
+
+/* Labels are the only thing that tells two action buttons apart: _dockAction
+   appends a span carrying the translated label. */
+const stripLabels = (strip) =>
+  strip.children.map((b) => (b.children[0] || {}).textContent);
+
+const controlsOut = layoutCard(
+  [
+    ["button.robot_start_auto_empty", "start_auto_empty"],
+    ["switch.robot_auto_drying", "auto_drying"],
+    ["button.robot_self_clean", "self_clean"],
+    ["switch.robot_self_clean", "self_clean"],
+    ["button.robot_manual_drying", "manual_drying"],
+  ],
+  "controls"
+);
+
+ok(
+  "the action strip leads the tab",
+  controlsOut[0] &&
+    controlsOut[0].className === "dgrp-hd" &&
+    controlsOut[1] &&
+    controlsOut[1].className === "dacts",
+  controlsOut.map((n) => n.className).join(" | ")
+);
+ok(
+  "actions from every group land in that one strip",
+  stripLabels(controlsOut[1]).join(",") ===
+    "Wash mop now,Dry mop now,Empty dust bin now",
+  stripLabels(controlsOut[1]).join(",")
+);
+/* One strip, not one per group - the old layout repeated it under each heading. */
+ok(
+  "there is exactly one action strip",
+  controlsOut.filter((n) => n.className === "dacts").length === 1
+);
+ok(
+  "settings still render under their own heading",
+  controlsOut.some((n) => n.className === "dgrp-hd") &&
+    controlsOut.filter((n) => n.className === "dgrp-hd").length >= 2,
+  controlsOut.map((n) => n.className).join(" | ")
+);
+
+/* Status has no actions, so it must not grow an empty strip - and a supply row
+   has to reach the tab it was moved into. */
+const statusOut = layoutCard(
+  [
+    ["sensor.robot_detergent_left", "detergent_left"],
+    ["button.robot_reset_detergent", "reset_detergent"],
+    ["sensor.robot_dust_bag_status", "dust_bag_status"],
+  ],
+  "status"
+);
+ok(
+  "status opens on a group heading, not a strip",
+  statusOut[0] && statusOut[0].className === "dgrp-hd",
+  statusOut.map((n) => n.className).join(" | ")
+);
+ok(
+  "no action strip on status",
+  !statusOut.some((n) => n.className === "dacts")
+);
+ok(
+  "a former supply row renders on status",
+  statusOut.some((n) => n.className === "drow drow-bar"),
+  statusOut.map((n) => n.className).join(" | ")
+);
+/* Auto-empty is declared before Detergent in DOCK_GROUPS, and the render follows
+   that order rather than the order the entities happened to resolve in. */
+ok(
+  "groups paint in DOCK_GROUPS order",
+  statusOut.filter((n) => n.className === "dgrp-hd").length === 2 &&
+    statusOut.indexOf(
+      statusOut.find((n) => n.className === "drow")
+    ) <
+      statusOut.indexOf(statusOut.find((n) => n.className === "drow drow-bar")),
+  statusOut.map((n) => n.className).join(" | ")
+);
+
+/* A stale tab name - "supplies" survives in _dockTab across a re-render - must
+   fall back rather than paint an empty sheet. */
+const staleOut = layoutCard(
+  [["button.robot_self_clean", "self_clean"]],
+  "supplies"
+);
+ok(
+  "a removed tab name falls back to controls",
+  staleOut.some((n) => n.className === "dacts"),
+  staleOut.map((n) => n.className).join(" | ")
 );
 
 /* ---------------------------------------------------------------- *

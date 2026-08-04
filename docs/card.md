@@ -165,18 +165,27 @@ The **Đế sạc / Dock** button beside Start opens a sheet for the base statio
 button carried the same noun but only sent `return_to_base`, which read as a promise of dock
 controls that did not exist; now the noun names something real.
 
-Three tabs:
+Two tabs, both laid out under the same five headings — mop washing, drying, auto-empty,
+water tank, detergent:
 
-- **Điều khiển / Controls** — grouped by function (mop washing, drying, auto-empty, water
-  tank, detergent). Each group leads with its one-shot actions — wash the mop now, dry now,
-  empty the bin now, drain the water, clean the dock, self-repair — then its settings:
-  toggles, pickers, and steppers for the numeric ones.
-- **Vật tư / Supplies** — percentage left for detergent, squeegee, on-board dirty water
-  tank, dirty water channel, deodorizer and scale inhibitor. Each bar turns red at 10% or
-  less and carries its own **Đặt lại / Reset** button.
-- **Trạng thái / Status** — read-only. Base-station status, drying progress as a bar plus
-  time remaining, auto-empty and dust-bag status, clean/dirty water tank, detergent, hot
-  water, drainage, whether the tank and mop pad are fitted, and the low-water warning.
+- **Điều khiển / Controls** — opens with **Làm ngay / Do it now**: one strip holding every
+  one-shot action, whatever group it belongs to. Wash the mop now, dry now and empty the bin
+  now lead, because those are the daily presses; dry the dust bag, clean the dock,
+  self-repair, drain and empty the tank follow. Everything below that strip is a setting you
+  adjust and forget — toggles, pickers, and steppers for the numeric ones — filed under its
+  group. Press-and-it-happens and turn-a-knob are different acts, and mixing them per group
+  meant hunting for "dry now" three headings down.
+- **Trạng thái / Status** — read-only, same headings. Base-station status and whether the mop
+  pad is fitted; drying progress as a bar plus time remaining and the dust-bag drying pair;
+  auto-empty and dust-bag status; the water tanks, hot water, drainage and the low-water
+  warning; detergent. Each group ends with the consumables that wear out in it — squeegee,
+  dirty water channel, on-board dirty water tank, detergent, deodorizer, scale inhibitor —
+  as a percentage bar that turns red at 10% or less, each with its own **Đặt lại / Reset**
+  button.
+
+Those supply percentages used to be a third **Vật tư / Supplies** tab. Almost no base
+resolves any of those sensors, so for most people it was a permanently empty tab; each row
+now sits with the group it belongs to and simply does not render when absent.
 
 ### Pickers switch to a dropdown when the list gets long
 
@@ -216,7 +225,7 @@ For the same reason the ~60 dock entities are watched for changes only while the
 open; watching them permanently would defeat the card's render early-out.
 
 Two figures are intentionally left out: the `*_time_left` companions to each supply
-percentage (days remaining), which would double the length of the Supplies tab for
+percentage (days remaining), which would double the length of the Status tab for
 information the percentage already conveys.
 
 Suction is hidden in mop-only mode, and humidity is hidden in sweep-only mode.
