@@ -35,6 +35,42 @@ so the new module is picked up.
 
 The card also has a visual editor, so all of the above are editable from the dashboard UI.
 
+## Layout
+
+The card has two layouts and picks between them itself — there is no option to set.
+
+- **Stacked** (the default, and what phones always get): header, map, room chips, settings
+  chip, then the tabs and the action row, top to bottom.
+- **Two-column**, from **720 px wide**: the header spans the top, the map takes the left
+  column, and the room chips, hint, settings chip and the tabs/actions panel stack in a
+  340 px rail on the right, with Start and Đế sạc sitting on the rail's bottom edge, level
+  with the map. Past 1040 px the rail widens to 380 px and the map gets a taller floor.
+  The bottom sheet becomes a dialog centred in the card, and the settings groups inside it
+  go two-up.
+
+The threshold is **the card's own width, not the screen's**. That distinction matters more
+than it sounds:
+
+- A **panel view** (`panel: true`) hands the card the whole window, so that is where the
+  two-column layout actually shows up on a desktop.
+- A **masonry** dashboard splits itself into ~500 px columns no matter how wide the window
+  is, so a card there stays stacked — correctly, because it really is only 500 px wide.
+- In **sections** view the card asks for the full width of its section and refuses to be
+  squeezed below half of one; whether it clears 720 px depends on how wide you have made
+  the section.
+
+So if you want the two-column layout on a PC, put the card in a panel view or a wide
+section. Resizing the browser window is not what decides it.
+
+Two smaller consequences of the wide layout:
+
+- `map_height` becomes a **minimum** rather than a fixed height — the map grows to match
+  the rail so the two columns end level. It is still the exact height when stacked.
+- `show_map: false` is always a single column, at any width.
+
+Mouse affordances (hover states on the room chips, the setting pills and the map buttons)
+are keyed off having a mouse, not off width, so a narrow card on a PC gets them too.
+
 ## The daily flow
 
 ### Header
@@ -258,10 +294,17 @@ those values as chips on the room, again like the app.
 
 ## Example: full-width dashboard card
 
+A panel view is what actually gets you the two-column layout on a desktop — the card is
+handed the whole window width there. `map_height` is the map's minimum in that layout.
+
 ```yaml
-type: custom:dreame-smart-vacuum-card
-entity: vacuum.mo
-map_height: 420
+views:
+  - title: Vacuum
+    panel: true
+    cards:
+      - type: custom:dreame-smart-vacuum-card
+        entity: vacuum.mo
+        map_height: 420
 ```
 
 ## Example: compact, no map

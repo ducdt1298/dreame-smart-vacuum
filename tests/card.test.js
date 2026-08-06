@@ -47,10 +47,37 @@ const stubEl = () => ({
   dataset: {},
 });
 
+/* Records every observe/disconnect so the resize wiring can be asserted. Node has
+   no ResizeObserver, and the card reaches for it as `window.ResizeObserver` rather
+   than a bare global precisely so it can be stubbed here. rAF runs the callback
+   synchronously, which keeps the coalescing path testable in one tick. */
+const roLog = { made: 0, observed: [], disconnected: 0 };
 const env = {
   HTMLElement: class {},
   customElements: { get: () => undefined, define: () => {} },
-  window: { customCards: [], addEventListener() {}, removeEventListener() {} },
+  window: {
+    customCards: [],
+    addEventListener() {},
+    removeEventListener() {},
+    ResizeObserver: class {
+      constructor(cb) {
+        this.cb = cb;
+        roLog.made++;
+      }
+      observe(el) {
+        roLog.observed.push(el);
+      }
+      unobserve() {}
+      disconnect() {
+        roLog.disconnected++;
+      }
+    },
+    requestAnimationFrame(fn) {
+      fn();
+      return 1;
+    },
+    cancelAnimationFrame() {},
+  },
   document: { createElement: () => stubEl() },
   console: { info() {}, debug() {}, warn() {}, error() {} },
 };
@@ -1189,6 +1216,149 @@ try {
   threw4 = err;
 }
 ok("rooms appearing later builds chips", threw4 === null && cc4._roomChips.size === 1);
+
+/* ---------------------------------------------------------------- *
+ * Wide-layout plumbing
+ *
+ * The two-column layout itself is CSS and cannot be asserted without a real
+ * layout engine, but three JS pieces hold it up and every one of them is a
+ * crash or a silently-broken-layout risk:
+ *   - .nomap on .dv is what collapses the grid back to one column, so a wide
+ *     card with show_map:false does not strand the rail beside an empty hole.
+ *   - the ResizeObserver is the only thing that recomputes the px-measured tab
+ *     pill when the card's width changes without a window resize.
+ *   - _onResize must survive firing before _build(): a ResizeObserver delivers
+ *     its first callback the instant it observes, and _renderOverlay walks
+ *     this._el.img with no guard of its own.
+ * ---------------------------------------------------------------- */
+console.log("\n[Wide layout plumbing]");
+
+function classSpy() {
+  const set = new Set();
+  return {
+    set,
+    classList: {
+      add: (c) => set.add(c),
+      remove: (c) => set.delete(c),
+      contains: (c) => set.has(c),
+      toggle: (c, on) => (on ? set.add(c) : set.delete(c)),
+    },
+  };
+}
+
+function mapCard(showMap) {
+  const card = Object.create(M.DreameSmartVacuumCard.prototype);
+  const cardEl = classSpy();
+  const stage = classSpy();
+  stage.style = { setProperty() {} };
+  card._config = { show_map: showMap, map_height: 320 };
+  card._el = {
+    card: cardEl,
+    stage,
+    img: classSpy(),
+    stageMsg: Object.assign(classSpy(), { textContent: "" }),
+    ovl: { innerHTML: "x" },
+    side: classSpy(),
+  };
+  card._cameraState = () => null;
+  card._resolveEntities = () => ({});
+  card._t = (k) => k;
+  card._cardClasses = cardEl.set;
+  card._stageClasses = stage.set;
+  return card;
+}
+
+const nm = mapCard(false);
+nm._renderMap();
+ok("show_map:false marks the card .nomap", nm._cardClasses.has("nomap"));
+ok("show_map:false hides the stage", nm._stageClasses.has("gone"));
+
+const wm = mapCard(true);
+wm._renderMap();
+ok("show_map:true leaves .nomap off", !wm._cardClasses.has("nomap"));
+ok("show_map:true shows the stage", !wm._stageClasses.has("gone"));
+
+/* The flag has to survive a config flip in both directions - it is set before
+   _renderMap's early return precisely so the false path cannot skip it. */
+const flip = mapCard(true);
+flip._renderMap();
+flip._config.show_map = false;
+flip._renderMap();
+ok("flipping show_map off adds .nomap", flip._cardClasses.has("nomap"));
+flip._config.show_map = true;
+flip._renderMap();
+ok("flipping show_map back on clears .nomap", !flip._cardClasses.has("nomap"));
+
+/* getGridOptions is what lets a sections-view card grow wide enough to ever
+   reach the two-column breakpoint. A numeric `rows` would pin the height while
+   .dv's overflow:hidden clipped the panel, so it must stay "auto". */
+const grid = Object.create(M.DreameSmartVacuumCard.prototype).getGridOptions();
+ok("getGridOptions spans the full 12 columns", grid.columns === 12);
+ok("getGridOptions refuses to be squeezed narrow", grid.min_columns === 6);
+ok("getGridOptions keeps height content-driven", grid.rows === "auto");
+
+/* A real construction, so _onResize is the bound closure the observer gets. */
+const roCard = new M.DreameSmartVacuumCard();
+roLog.made = 0;
+roLog.observed = [];
+roLog.disconnected = 0;
+
+let threwResize = null;
+try {
+  roCard._onResize();
+} catch (err) {
+  threwResize = err;
+}
+ok(
+  "_onResize before _build is a no-op, not a crash",
+  threwResize === null && roCard._resizeRaf === 0,
+  threwResize && threwResize.message
+);
+
+roCard.connectedCallback();
+ok("connectedCallback builds one ResizeObserver", roLog.made === 1);
+ok("it observes the host element", roLog.observed.length === 1 && roLog.observed[0] === roCard);
+
+/* HA re-attaches the card whenever it moves it between views or toggles edit
+   mode, so a second connect must not stack observers. */
+roCard.connectedCallback();
+ok("reattaching does not build a second observer", roLog.made === 1);
+
+roCard.disconnectedCallback();
+ok("disconnectedCallback releases the observer", roLog.disconnected === 1);
+
+/* Older browsers, and the pre-stub state of this very harness. */
+const savedRO = env.window.ResizeObserver;
+delete env.window.ResizeObserver;
+const noRo = new M.DreameSmartVacuumCard();
+let threwNoRo = null;
+try {
+  noRo.connectedCallback();
+  noRo.disconnectedCallback();
+} catch (err) {
+  threwNoRo = err;
+}
+ok(
+  "no ResizeObserver support degrades quietly",
+  threwNoRo === null && noRo._ro === null,
+  threwNoRo && threwNoRo.message
+);
+env.window.ResizeObserver = savedRO;
+
+/* Split out of _renderTabs so the observer can call it with no hass and no
+   entities; it must also tolerate running before _build assigns _el. */
+const ti = Object.create(M.DreameSmartVacuumCard.prototype);
+let threwTi = null;
+try {
+  ti._syncTabIndicator();
+} catch (err) {
+  threwTi = err;
+}
+ok(
+  "_syncTabIndicator is safe before _build",
+  threwTi === null,
+  threwTi && threwTi.message
+);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

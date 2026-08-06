@@ -11,7 +11,10 @@
  * so we do our own build-once / patch-on-update rendering.
  */
 
-const CARD_VERSION = "1.0.0";
+/* Kept in step with manifest.json, which is what feeds the ?v= cache buster on
+   the script URL - this string is only the console banner, and docs/card.md
+   points people at it when they need to confirm which build is live. */
+const CARD_VERSION = "2.2.0";
 const INTEGRATION = "dreame_smart_vacuum";
 
 /* ------------------------------------------------------------------ *
@@ -642,12 +645,24 @@ class DreameSmartVacuumCard extends HTMLElement {
     this._drag = null;
 
     this._refetchGeometry = debounce(() => this._fetchGeometry(), 250);
+    this._ro = null;
+    this._resizeRaf = 0;
     /* Bound once so detach always removes the same reference. The tab indicator
-       is measured in layout pixels, so it has to be recomputed here too - the
-       overlay alone is resolution independent. */
+       is measured in layout pixels and the badge radius is derived from the
+       rendered image box, so both have to be recomputed here - the overlay
+       geometry alone is resolution independent.
+       Coalesced to one frame: a ResizeObserver fires on every step of a sidebar
+       or edit-mode animation, and _renderOverlay rebuilds path strings.
+       The _built guard closes a real hole: _renderOverlay dereferences
+       this._el.img with no guard of its own, and a ResizeObserver delivers its
+       first callback the moment it observes - which can land before setConfig. */
     this._onResize = () => {
-      this._renderOverlay();
-      if (this._hass) this._renderTabs();
+      if (!this._built || this._resizeRaf) return;
+      this._resizeRaf = window.requestAnimationFrame(() => {
+        this._resizeRaf = 0;
+        this._renderOverlay();
+        this._syncTabIndicator();
+      });
     };
   }
 
@@ -685,6 +700,16 @@ class DreameSmartVacuumCard extends HTMLElement {
 
   getCardSize() {
     return this._config.show_map === false ? 4 : 9;
+  }
+
+  /* Sections view sizes cards from grid options and defaults narrow, so without
+     this the card is never handed enough width to reach the wide layout on the
+     one view type that could grant it. Height stays content-driven: a numeric
+     `rows` would pin it while .dv's overflow:hidden silently clipped the panel.
+     Additive - older cores ignore the method, and getCardSize() still drives
+     masonry, whose ~500px columns correctly stay on the narrow layout. */
+  getGridOptions() {
+    return { columns: 12, min_columns: 6, rows: "auto" };
   }
 
   set hass(hass) {
@@ -971,10 +996,21 @@ class DreameSmartVacuumCard extends HTMLElement {
   connectedCallback() {
     window.removeEventListener("resize", this._onResize);
     window.addEventListener("resize", this._onResize);
+    /* Once layout keys off the card's own width, window resize is not enough:
+       collapsing the HA sidebar, entering edit mode and dragging a section
+       column all resize this element without resizing the window. Reached via
+       `window.` so the module still evaluates under the headless test stub. */
+    if (!this._ro && window.ResizeObserver) {
+      this._ro = new window.ResizeObserver(this._onResize);
+    }
+    if (this._ro) this._ro.observe(this);
   }
 
   disconnectedCallback() {
     window.removeEventListener("resize", this._onResize);
+    if (this._ro) this._ro.disconnect();
+    if (this._resizeRaf) window.cancelAnimationFrame(this._resizeRaf);
+    this._resizeRaf = 0;
     clearTimeout(this._toastTimer);
   }
 
@@ -1014,36 +1050,43 @@ class DreameSmartVacuumCard extends HTMLElement {
           </div>
         </div>
 
-        <div class="roomlist" role="group"></div>
+        <!-- Everything below the map becomes one column on a wide card. The
+             wrapper is display:contents until the container query fires, so the
+             narrow box tree is exactly what it was before it existed. It
+             deliberately does not wrap .scrim/.sheet/.toast: those stay direct
+             children so .dv remains their containing block. -->
+        <div class="rail">
+          <div class="roomlist" role="group"></div>
 
-        <div class="hintrow">
-          <div class="hint"></div>
-          <button class="linkbtn zone-clear gone" type="button"></button>
-        </div>
-
-        <button class="chip custom-chip" aria-haspopup="dialog">
-          ${svg(ICON.autorenew, "chip-ico")}
-          <span class="chip-txt"></span>
-          ${svg(ICON.chevron, "chip-chev")}
-        </button>
-
-        <div class="panel">
-          <div class="tabs" role="tablist">
-            <button class="tab" data-mode="rooms" role="tab"></button>
-            <button class="tab" data-mode="all" role="tab"></button>
-            <button class="tab" data-mode="zones" role="tab"></button>
-            <span class="tab-ind"></span>
+          <div class="hintrow">
+            <div class="hint"></div>
+            <button class="linkbtn zone-clear gone" type="button"></button>
           </div>
-          <div class="acts">
-            <button class="act act-start">
-              ${svg(ICON.play, "act-ico")}
-              <span class="act-txt"></span>
-            </button>
-            <span class="act-sep"></span>
-            <button class="act act-dock" aria-haspopup="dialog">
-              ${svg(ICON.station, "act-ico")}
-              <span class="act-txt"></span>
-            </button>
+
+          <button class="chip custom-chip" aria-haspopup="dialog">
+            ${svg(ICON.autorenew, "chip-ico")}
+            <span class="chip-txt"></span>
+            ${svg(ICON.chevron, "chip-chev")}
+          </button>
+
+          <div class="panel">
+            <div class="tabs" role="tablist">
+              <button class="tab" data-mode="rooms" role="tab"></button>
+              <button class="tab" data-mode="all" role="tab"></button>
+              <button class="tab" data-mode="zones" role="tab"></button>
+              <span class="tab-ind"></span>
+            </div>
+            <div class="acts">
+              <button class="act act-start">
+                ${svg(ICON.play, "act-ico")}
+                <span class="act-txt"></span>
+              </button>
+              <span class="act-sep"></span>
+              <button class="act act-dock" aria-haspopup="dialog">
+                ${svg(ICON.station, "act-ico")}
+                <span class="act-txt"></span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1241,6 +1284,13 @@ class DreameSmartVacuumCard extends HTMLElement {
   }
 
   _renderMap() {
+    /* Drives the wide layout's fallback to a single column: without a map there
+       is no left column, and an explicit grid would otherwise leave the rail
+       stranded beside a 336px hole. Set before the early return so both paths
+       agree. Not derived in CSS from `.stage.gone` via :has() - Firefox 110-120
+       supports container queries but not :has(), which is exactly the broken
+       combination (two columns, no fallback). */
+    this._el.card.classList.toggle("nomap", this._config.show_map === false);
     if (this._config.show_map === false) {
       this._el.stage.classList.add("gone");
       return;
@@ -1615,6 +1665,18 @@ class DreameSmartVacuumCard extends HTMLElement {
       tab.setAttribute("aria-selected", on ? "true" : "false");
       tab.setAttribute("tabindex", on ? "0" : "-1");
     });
+    this._syncTabIndicator();
+  }
+
+  /* Split out of _renderTabs because it is the only part that has to re-run on a
+     pure size change - the tab strip is full-bleed on a narrow card but sits in
+     a ~340px rail on a wide one, and the sidebar can change its width with no
+     window resize at all. It needs no hass, no config and no entities, which is
+     also what lets the ResizeObserver's first callback paint the indicator on
+     the very first layout pass: _renderTabs runs while the card is still
+     detached, where offsetWidth is 0 and the pill would otherwise stay hidden. */
+  _syncTabIndicator() {
+    if (!this._el) return;
     /* Measure in px rather than percentages: the indicator is positioned
        against the padding box while the tabs flex inside the content box, so a
        percentage width lands a few pixels off. */
@@ -2396,6 +2458,13 @@ class DreameSmartVacuumCard extends HTMLElement {
     if (kind === "settings") this._renderSettingsSheet();
     else if (kind === "dock") this._renderDockSheet();
     this._el.sheet.focus();
+    /* On a wide card the sheet is a dialog centred in the CARD, not the viewport,
+       so with map_height near its 900 maximum its centre can sit below the fold.
+       block:"nearest" nudges by the minimum and is a no-op when already visible.
+       Guarded for the headless stub, which has no scrollIntoView. */
+    if (this._el.sheet.scrollIntoView) {
+      this._el.sheet.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
   }
 
   _openRoomSheet(id) {
@@ -3298,7 +3367,13 @@ class DreameSmartVacuumCardEditor extends HTMLElement {
  * ------------------------------------------------------------------ */
 
 const STYLES = `
-:host { display: block; }
+/* Named inline-size container so the wide layout below can key off the card's own
+   width rather than the window's - a card in a narrow masonry column on a wide
+   screen has to stay in the stacked layout. It has to sit on :host and not on .dv,
+   because a container is never matched by its own @container rules, and .dv is the
+   element those rules restyle. inline-size only: plain "size" would contain the
+   block axis too, collapsing the card to nothing. */
+:host { display: block; container: dv / inline-size; }
 
 .dv {
   /* Set explicitly rather than inheriting it from ha-card: the bottom sheet is
@@ -3317,6 +3392,10 @@ const STYLES = `
   overflow: hidden;
   padding: 14px 14px 16px;
 }
+
+/* Generates no box at all until the wide layout claims it, so the narrow card
+   lays out exactly as it did before the wrapper existed. */
+.rail { display: contents; }
 
 /* ---------- header ---------- */
 .hdr { display: flex; align-items: center; gap: 12px; padding: 2px 4px 12px; }
@@ -3670,6 +3749,173 @@ const STYLES = `
 @media (prefers-color-scheme: dark) {
   .dv { --dv-line: rgba(255,255,255,.12); }
   .side-btn, .chip, .panel { box-shadow: 0 2px 10px rgba(0,0,0,.4); }
+}
+
+/* ---------- wide layout: map left, control rail right ----------
+   Keyed off the card's own inline size, never the viewport: a 4K screen can
+   still hand this card a 300px masonry column, and it has to stay stacked there.
+   @container adds no specificity, so everything below wins on source order
+   alone - which is why this block sits at the very end of the sheet.
+
+   720px is derived, not picked: 28px of .dv padding + a 340px rail + a 16px gap
+   leaves the map 336px. The 340 comes from .acts - .act is flex:1, so both
+   buttons take the longer label's width, and "Bat dau lam sach" needs ~163px
+   each. Below 720 the map column would be narrower than the default 320px map
+   height, and letterboxing would make two columns worse than one. */
+@container dv (min-width: 720px) {
+  .dv:not(.nomap) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--dv-rail-w, 340px);
+    /* auto rather than 1fr: an auto track still stretches its items into it and
+       needs no reasoning about fr resolution under an indefinite height. */
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "hdr hdr"
+      "map rail";
+    column-gap: var(--dv-col-gap, 16px);
+  }
+  .dv:not(.nomap) .hdr { grid-area: hdr; }
+  .dv:not(.nomap) .stage {
+    grid-area: map;
+    /* The base rule is height: var(--map-h, 320px) and _renderMap writes --map-h
+       as an inline style - it sets the VARIABLE, not the height property, so
+       overriding height here wins outright while the config stays readable.
+       height:auto also lets the map stretch to the row, so a long room list
+       makes the map taller instead of leaving a gap beside it. */
+    height: auto;
+    min-height: max(var(--map-h, 320px), var(--dv-map-min, 380px));
+  }
+  .dv:not(.nomap) .rail {
+    grid-area: rail;
+    display: flex;
+    flex-direction: column;
+    /* Grid items default to min-width:auto, and the rail is full of nowrap text
+       (.rchip-t, .act-txt, .tab, .chip-txt) - without this a long room name
+       forces the track wider than its column and squeezes the map. */
+    min-width: 0;
+  }
+  .dv:not(.nomap) .roomlist { min-width: 0; }
+
+  /* Sit Start/Dock on the rail's bottom edge, level with the map's. */
+  .dv:not(.nomap) .rail > .panel { margin-top: auto; }
+  .dv:not(.nomap) .rail > .chip { margin-bottom: 12px; }
+  /* As a stretched flex item the chip would leave dead space after its label, so
+     push the chevron out and let it read as a list row. */
+  .dv:not(.nomap) .rail > .chip { justify-content: flex-start; }
+  .dv:not(.nomap) .rail > .chip .chip-chev { margin-left: auto; }
+
+  /* Outside zones mode both children carry .gone, leaving 10px of dead air
+     between the room chips and the custom chip. */
+  .rail .hintrow:not(:has(> :not(.gone))) { display: none; }
+
+  /* position:absolute with no offsets, so this has always rendered at its static
+     position - the stage's top-left corner. Unnoticeable at 320px wide, plainly
+     wrong on a 500px+ map. */
+  .stage-msg {
+    inset: 0;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 0 16px;
+  }
+
+  /* ---------- bottom sheet becomes a centred dialog ----------
+     Stays position:absolute inside .dv. position:fixed is not an option: the
+     container on :host is already the containing block for fixed descendants. */
+  .scrim { background: rgba(0,0,0,.44); }
+  .sheet {
+    top: 50%; left: 50%; right: auto; bottom: auto;
+    width: min(520px, calc(100% - 48px));
+    border-radius: var(--dv-radius);
+    /* 88% alone is 88% of a card the wide layout makes much shorter, so cap it
+       in px too or the dock sheet's ~60 rows land in a ~350px scroller. */
+    max-height: min(88%, 560px);
+    box-shadow: 0 18px 48px rgba(0,0,0,.28);
+    transform: translate(-50%, -50%) scale(.96);
+    opacity: 0;
+    /* translateY(102%) parked the closed sheet outside .dv, where overflow:hidden
+       made it invisible, unclickable and untabbable for free. Centred, all three
+       have to be stated - visibility is delayed so the fade still plays out. */
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity .18s ease,
+      transform .18s cubic-bezier(.4,0,.2,1),
+      visibility 0s linear .18s;
+  }
+  .sheet.open {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition:
+      opacity .18s ease,
+      transform .18s cubic-bezier(.4,0,.2,1),
+      visibility 0s linear 0s;
+  }
+  /* A drag affordance for a gesture a mouse cannot make. */
+  .grab { display: none; }
+  /* Sticky rather than a new scroll container: all three renderers save and
+     restore sheet.scrollTop, and the settings sheet re-renders on every pick, so
+     moving the scroller to .sheet-body would snap it to the top on every tap. */
+  .sheet-hd {
+    position: sticky; top: 0; z-index: 1;
+    background: var(--dv-surface); padding-top: 14px;
+  }
+  /* Only the settings and room sheets append pure .grp blocks. .dock-body is a
+     flat run of .dgrp-hd headings interleaved with .drow siblings, where two
+     columns would orphan every heading from its rows. */
+  .sheet-body:not(.dock-body) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 0 18px;
+    align-items: start;
+  }
+
+  /* toast: edge-to-edge across a wide card reads as a banner, not a message. */
+  .toast {
+    left: 50%; right: auto; max-width: 420px;
+    transform: translateX(-50%) translateY(8px);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @media (prefers-color-scheme: dark) {
+    .sheet {
+      box-shadow: 0 18px 48px rgba(0,0,0,.6);
+      border: 1px solid var(--dv-line);
+    }
+  }
+}
+
+/* Wide desktop. Only two things genuinely improve with more room: at 340px the
+   Vietnamese action labels fit with no slack, and a ~610px map column against a
+   380px floor pillarboxes a near-square map render. */
+@container dv (min-width: 1040px) {
+  .dv:not(.nomap) {
+    --dv-rail-w: 380px;
+    --dv-map-min: 480px;
+    --dv-col-gap: 20px;
+  }
+}
+
+/* ---------- pointer affordances ----------
+   An input-capability question, not a width one: a narrow card on a PC still has
+   a mouse, and (hover: hover) keeps hover from sticking on touch. */
+@media (hover: hover) and (pointer: fine) {
+  .rchip:hover { border-color: var(--dv-accent); background: var(--dv-sunken); }
+  /* Do not let the generic hover overwrite the room's own colour. */
+  .rchip.on:hover { border-color: var(--rc, var(--dv-accent)); }
+  .seg:hover:not(.on) { border-color: var(--dv-accent); background: var(--dv-sunken); }
+  .side-btn:hover { background: var(--dv-sunken); box-shadow: 0 4px 14px rgba(0,0,0,.2); }
+  .chip:hover { box-shadow: 0 4px 16px rgba(0,0,0,.18); }
+  .tab:hover:not(.on) { color: var(--dv-text); }
+  /* Background only. .ret-btn:hover already owns the colour at the same
+     specificity and sits earlier in the sheet, so setting colour here would
+     silently kill the accent hover on the return-to-dock button. */
+  .icon-btn:hover:not([disabled]) { background: var(--dv-sunken); }
+  .dsel:hover { border-color: var(--dv-accent); }
+  .btn.ghost:hover { background: color-mix(in srgb, var(--dv-text) 8%, var(--dv-sunken)); }
+  .btn.primary:hover { background: color-mix(in srgb, var(--dv-accent) 88%, #000); }
 }
 `;
 
